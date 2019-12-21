@@ -54,6 +54,7 @@ public class App {
             compositeBean();
             tabularBean();
             dynamicBean();
+            exampleBean();
 
             Scanner scanner = new Scanner(System.in);
             try {
@@ -139,6 +140,18 @@ public class App {
         for (Object row : users.values()) {
             printUser((CompositeData) row);
         }
+    }
+
+    public static void exampleBean() throws Exception {
+        ExampleService service = new ExampleService();
+        final DynamicMBean serviceBean = new DynamicBean.Builder()
+                .withOperation("isDebugEnabled", "returns true if is debugging", service)
+                .withOperation("setDebugEnabled", "sets debugging", service,
+                        ParameterInfo.builder(Boolean.TYPE).withName("debug").build())
+                .build();
+
+        ObjectName objectName = new ObjectName("com.tersesystems:type=ServiceBean,name=ServiceBean");
+        mBeanServer.registerMBean(serviceBean, objectName);
     }
 
     public static void printUser(CompositeData user) {

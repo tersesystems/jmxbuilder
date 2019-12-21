@@ -1,5 +1,7 @@
 # JMXBuilder
 
+[![Build Status](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)
+
 JMXBuilder is a library that creates [Dynamic MBeans](https://docs.oracle.com/javase/8/docs/api/javax/management/DynamicMBean.html) from a set of attributes and operations, provided by functions.  
 
 JMXBuilder is intended to help provide an admin interface for applications by exposing components in the most minimal way possible. 
@@ -90,6 +92,8 @@ public class CompositeExample {
 }
 ```
 
+![composite.png](composite.png)
+
 ## Tables
 
 We can also do lists of users, using the same writers we defined earlier and mapping them to an `Iterable<User>`, using the `TabularDataWriter`:
@@ -129,6 +133,10 @@ public class TabularExample {
     }
 }
 ```
+
+Which looks like this:
+
+![tabular.png](tabular.png)
 
 ## Operations
 
@@ -177,6 +185,10 @@ public class DebugExample {
 
 }
 ```
+
+which looks like this:
+
+![operations.png](operations.png)
 
 ## Notification
 
