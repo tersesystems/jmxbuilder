@@ -99,9 +99,6 @@ public class App {
                             return notification;
                         })
                         .build())
-                .withNotification(javax.management.Notification.class.getName(), "Sent when operation completes", "jmx.operation.completion")
-                .withAttributeChangeNotifications()
-                .withDescriptor(DescriptorSupport.builder().withImmutableInfo(false).build())
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=UserBean,name=User");
