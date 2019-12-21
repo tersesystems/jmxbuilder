@@ -1,6 +1,21 @@
 # JMXBuilder
 
-[![Build Status](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)
+<!---freshmark shields
+output = [
+	link(shield('Bintray', 'bintray', 'tersesystems:jmxbuilder', 'blue'), 'https://bintray.com/tersesystems/maven/jmxbuilder/view'),
+	link(shield('Latest version', 'latest', '{{previousVersion}}', 'blue'), 'https://github.com/tersesystems/jmxbuilder/releases/latest'),
+	link(shield('License Apache2', 'license', 'Apache2', 'blue'), 'https://www.tldrlegal.com/l/apache2'),
+	'',
+	link(image('Travis CI', 'https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master'), 'https://travis-ci.org/tersesystems/jmxbuilder')
+	].join('\n')
+-->
+[![Bintray](https://img.shields.io/badge/bintray-tersesystems%3Ajmxbuilder-blue.svg)](https://bintray.com/tersesystems/maven/jmxbuilder/view)
+[![Latest version](https://img.shields.io/badge/latest-0.0.1-blue.svg)](https://github.com/tersesystems/jmxbuilder/releases/latest)
+[![License Apache2](https://img.shields.io/badge/license-Apache2-blue.svg)](https://www.tldrlegal.com/l/apache2)
+
+[![Travis CI](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)
+<!---freshmark /shields -->
+
 
 JMXBuilder is a library that creates [Dynamic MBeans](https://docs.oracle.com/javase/8/docs/api/javax/management/DynamicMBean.html) from a set of attributes and operations, provided by functions.  
 
