@@ -16,13 +16,16 @@ output = [
 [![Travis CI](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)
 <!---freshmark /shields -->
 
-
 JMXBuilder is a library that creates [Dynamic MBeans](https://docs.oracle.com/javase/8/docs/api/javax/management/DynamicMBean.html) from a set of attributes and operations, provided by functions.  
 
 JMXBuilder is intended to help provide an admin interface for applications by exposing components in the most minimal way possible. 
 
 JMXBuilder does not require you to understand the hairy internals of JMX.  It uses the [MXBean](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html) open type mappings, together with [CompositeData](https://docs.oracle.com/javase/8/docs/api/javax/management/openmbean/CompositeData.html) and [TabularData](https://docs.oracle.com/javase/8/docs/api/javax/management/openmbean/TabularData.html).  Roughly, the MXBean style exposes a "JSON style" for exposing information, where you keep things to strings, numbers, and booleans, and then composites are sub objects and tablular data are arrays.
  
+If you are running on your laptop, then I like using [Zulu Mission Control](https://www.azul.com/products/zulu-mission-control/).
+ 
+If you want to use JMX remotely, you should use [Jolokia](https://jolokia.org/) as an agent to expose JMX over HTTP with the [appropriate authentication and authorization](https://jolokia.org/reference/html/security.html) and [Hawt.io](http://hawt.io/) to view it using an HTML GUI.  Don't worry, making a [JAAS module](https://docs.oracle.com/javase/10/security/jaas-authorization-tutorial.htm#JSSEC-GUID-D43CF965-8A5F-4A23-A2AF-F41DD5F8B411) isn't that hard.  **[DO NOT USE JMX REMOTING IN PRODUCTION](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).**
+
 ## Attributes
 
 Let's start with a simple example where we want to create a user object and expose that through JMX.  The user will have a name, an age, and an address, but we'll only expose the name and age here.
@@ -40,7 +43,6 @@ class UserExample {
         final DynamicMBean userBean = new DynamicBeanBuilder()
                 .withSimpleAttribute("name", "User name", user::getName, user::setName)
                 .withSimpleAttribute("age", "User Age", user::getAge, user::setAge, new DescriptorBuilder().withUnits("years").build())
-                .withDescriptor(new DescriptorBuilder().withImmutableInfo(false).build())
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems.jmxbuilder:type=UserBean,name=User");
@@ -211,19 +213,23 @@ which looks like this:
 
 ## Some Caveats
 
-JMX does not have great performance or resolution, so you should not use this to be your main query interface.
+JMX does not have great performance or resolution, so you should not use this to render 100K of data or poll for data repeatedly.
 
 The platform MBeanServer is tied to the lifecycle of the JVM itself.  If you are running applications with a different lifecycle, i.e. a Java EE app that may reload its classloader, then you are responsible for unregistering the MBean in an application shutdown hook.
 
 JMX does not have any knowledge of thread safety, and doesn't provide any kind of protection for multiple clients calling operations concurrently.  
 
-**[DO NOT USE JMX REMOTING IN PRODUCTION](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).**
+Again, **[DO NOT USE JMX REMOTING IN PRODUCTION](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).**
 
-## Further Reading
+## Metrics Options
+
+If you want to use JMX to pull out metrics from the JVM, then [JMXTrans](https://www.jmxtrans.org/) or the [Prometheus JMX Exporter](https://github.com/prometheus/jmx_exporter) may be a good fit.  Alternately, you can pull the information that the JVM exposes through the system mbeans through [Yammer Metrics JVM instrumentation](https://metrics.dropwizard.io/4.1.2/manual/jvm.html) and then send that through one of the reporters there.
+
+## Other Decent APIs
 
 If you are happy with Java annotations, I recommend [JMXWrapper](https://github.com/uklimaschewski/JMXWrapper) as a similar "no JMX manual required" solution.  JMXBuilder can also be used alongside JMXWrapper if that works better for you.
 
-If you want to use JMX for management, you should use [Jolokia](https://jolokia.org/) as an agent to expose JMX over HTTP with the [appropriate authentication and authorization](https://jolokia.org/reference/html/security.html) and [Hawt.io](http://hawt.io/) to view it using an HTML GUI.  Don't worry, making a [JAAS module](https://docs.oracle.com/javase/10/security/jaas-authorization-tutorial.htm#JSSEC-GUID-D43CF965-8A5F-4A23-A2AF-F41DD5F8B411) isn't that hard.
+## Further Reading
 
 If you really want to know how JMX works, the [specification](https://docs.oracle.com/javase/8/docs/technotes/guides/jmx/JMX_1_4_specification.pdf) is still the best available tool.  If you want the gory details, then Dustin Marx has the [definitive series](https://marxsoftware.blogspot.com/search/label/JMX) of blog posts going into detail of the JMX implementation.  The [JMX Accelerated HOWTO](http://docs.huihoo.com/howto/jmx/jmx.html) is also good.  Frankly, I recommend not reading any of this, as most of it is very dated and not needed as an end user.
 
