@@ -1,0 +1,120 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2019 Terse Systems <will@tersesystems.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.tersesystems.jmxbuilder;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+
+import javax.management.*;
+import javax.management.modelmbean.DescriptorSupport;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class OperationTests {
+
+    static final MBeanParameterInfo[] NO_PARAMS = new MBeanParameterInfo[0];
+
+    static class ExampleService {
+        private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
+        private boolean debug;
+
+        String dump() {
+            return ("Dumping contents");
+        }
+
+        public boolean isDebugEnabled() {
+            return debug;
+        }
+
+        public void setDebugEnabled(boolean debug) {
+            this.debug = debug;
+        }
+    }
+
+    @Test
+    @DisplayName("With Operation From Function")
+    public void testOperationFromFunction() {
+        ExampleService service = new ExampleService();
+        final DynamicMBean serviceBean = DynamicBean.builder()
+                .withOperation("dump", "dumps the internal state", service::dump)
+                .build();
+
+        MBeanInfo mBeanInfo = serviceBean.getMBeanInfo();
+        MBeanOperationInfo operationInfo = new MBeanOperationInfo("dump",
+                "dumps the internal state",
+                NO_PARAMS,
+                "java.lang.Void",
+                MBeanOperationInfo.INFO,
+                new DescriptorSupport());
+        assertThat(mBeanInfo.getOperations()).contains(operationInfo);
+    }
+
+    @Test
+    @DisplayName("With Operation From Runnable")
+    public void testOperationFromRunnable() {
+        final DynamicMBean serviceBean = new DynamicBean.Builder()
+                .withOperation("dump", "dumps the internal state", new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("hello");
+                    }
+                })
+                .build();
+
+        MBeanInfo mBeanInfo = serviceBean.getMBeanInfo();
+        MBeanOperationInfo operationInfo = new MBeanOperationInfo("dump",
+                "dumps the internal state",
+                NO_PARAMS,
+                "java.lang.Void",
+                MBeanOperationInfo.INFO,
+                new DescriptorSupport());
+        assertThat(mBeanInfo.getOperations()).contains(operationInfo);
+    }
+
+    @Test
+    @DisplayName("With Operation From Parameter")
+    public void testOperationFromParameter() {
+        ExampleService service = new ExampleService();
+        final DynamicMBean loggerBean = new DynamicBean.Builder()
+                .withOperation("isDebugEnabled", "returns true if is debugging", service)
+                .withOperation("setDebugEnabled", "sets debugging", service,
+                        ParameterInfo.builder(Boolean.TYPE).withName("debug").build())
+                .build();
+
+        MBeanInfo mBeanInfo = loggerBean.getMBeanInfo();
+        MBeanOperationInfo operationInfo = new MBeanOperationInfo("isDebugEnabled",
+                "returns true if is debugging",
+                NO_PARAMS,
+                "boolean",
+                MBeanOperationInfo.INFO,
+                new DescriptorSupport());
+        assertThat(mBeanInfo.getOperations()).contains(operationInfo);
+
+        MBeanOperationInfo setInfo = new MBeanOperationInfo("setDebugEnabled",
+                "sets debugging",
+                new MBeanParameterInfo[] {
+                    new MBeanParameterInfo("debug", "boolean", null)
+                },
+                "void",
+                MBeanOperationInfo.INFO,
+                new DescriptorSupport());
+        assertThat(mBeanInfo.getOperations()).contains(setInfo);
+
+    }
+}

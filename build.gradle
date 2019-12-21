@@ -1,0 +1,37 @@
+plugins {
+    id 'java-library'
+    id "org.shipkit.java"              version "2.2.5"
+    id 'com.diffplug.gradle.spotless'  version '3.24.3'
+}
+
+repositories {
+    jcenter()
+}
+
+test {
+    useJUnitPlatform()
+}
+
+spotless {
+    freshmark {
+        propertiesFile('version.properties')
+    }
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+
+    // https://mvnrepository.com/artifact/net.jodah/typetools
+    implementation group: 'net.jodah', name: 'typetools', version: '0.6.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.3.1'
+    testImplementation ("org.assertj:assertj-core:3.11.1")
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
