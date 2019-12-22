@@ -142,9 +142,12 @@ public class App {
     public static void exampleBean() throws Exception {
         ExampleService service = new ExampleService();
         final DynamicMBean serviceBean = new DynamicBean.Builder()
-                .withOperation("isDebugEnabled", "returns true if is debugging", service)
-                .withOperation("setDebugEnabled", "sets debugging", service,
-                        ParameterInfo.builder(Boolean.TYPE).withName("debug").build())
+                .withSimpleAttribute(
+                        "debugEnabled",
+                        "",
+                        service::isDebugEnabled,
+                        service::setDebugEnabled,
+                        DescriptorSupport.builder().withImmutableInfo(false).build())
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=ServiceBean,name=ServiceBean");

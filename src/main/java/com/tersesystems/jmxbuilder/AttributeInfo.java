@@ -18,6 +18,7 @@
 package com.tersesystems.jmxbuilder;
 
 import net.jodah.typetools.TypeResolver;
+import org.slf4j.Logger;
 
 import javax.management.AttributeChangeNotification;
 import javax.management.Descriptor;
@@ -37,8 +38,10 @@ import static java.util.Objects.requireNonNull;
  * Intentionally open so you can pass in your own if the builder pattern doesn't work.
  */
 public class AttributeInfo<T> {
+    private final Logger logger;
+
     // Keep the class instance around to protect against type erasure
-    private final String typeString;
+    private final Class<T> attributeClass;
     private final String name;
     private final String description;
     private final Supplier<? extends T> supplier;
@@ -47,41 +50,65 @@ public class AttributeInfo<T> {
 
     private final AtomicLong sequenceNumber = new AtomicLong(1L);
 
-    public AttributeInfo(String name, String typeString, Supplier<? extends T> supplier) {
-        this(name, typeString, null, supplier, null, null);
+    public AttributeInfo(String name, Class<T> attributeClass, Supplier<? extends T> supplier) {
+        this(name, attributeClass, null, supplier, null, null);
     }
 
-    public AttributeInfo(String name, String typeString, Supplier<? extends T> supplier, Consumer<? super T> consumer) {
-        this(name, typeString, null, supplier, consumer, null);
+    public AttributeInfo(String name, Class<T> attributeClass, Supplier<? extends T> supplier, Consumer<? super T> consumer) {
+        this(name, attributeClass, null, supplier, consumer, null);
     }
 
-    public AttributeInfo(String name, String typeString, String description, Supplier<? extends T> supplier, Consumer<? super T> consumer, Descriptor descriptor) {
-        this.typeString = requireNonNull(typeString, "Null typeString");
+    public AttributeInfo(String name, Class<T> attributeClass, String description, Supplier<? extends T> supplier, Consumer<? super T> consumer, Descriptor descriptor) {
         this.name = requireNonNull(name, "Null name");
+        this.attributeClass = requireNonNull(attributeClass, "Null attribute class");
         this.description = description;
         this.supplier = supplier;
         this.consumer = consumer;
         this.descriptor = descriptor;
+        this.logger = org.slf4j.LoggerFactory.getLogger(getClass());
     }
 
     public Optional<T> get() {
-        return Optional.ofNullable(supplier).map(Supplier::get);
+        try {
+            return Optional.ofNullable(supplier).map(Supplier::get);
+        } catch (Exception e) {
+            logger.error("Cannot get from supplier", e);
+            throw e;
+        }
     }
 
-    public Boolean set(T value, Consumer<Function<Object, Notification>> receiver) {
-        if (consumer != null) {
-            T oldValue = supplier.get();
-            consumer.accept(value);
-            if (receiver != null) {
-                // Neither JConsole nor JMC have a built in way to display a custom AttributeChange notification
-                receiver.accept(source -> new AttributeChangeNotification(source,
-                        sequenceNumber.getAndIncrement(), System.currentTimeMillis(),
-                        String.format("%s changed from %s to %s", name, oldValue, value), name, typeString,
-                        oldValue, value));
+    public Boolean set(T value, Consumer<Function<T, Notification>> receiver) {
+        try {
+            if (consumer != null) {
+                // if the consumer type is a primitive, then passing in a null will result in unboxing to a raw value.
+                // so we can't do that.  Instead, map null to false, 0, "" depending on type.
+                if (value == null) {
+                    // The function doesn't know if this is primitive or not.
+                    if (Boolean.class.equals(attributeClass)) {
+                        consumer.accept((T) Boolean.FALSE);
+                    } else if (String.class.equals(attributeClass)) {
+                        consumer.accept((T) "");
+                    } else {
+                        throw new IllegalStateException("Cannot map type " + attributeClass + " to null");
+                    }
+                } else {
+                    consumer.accept(value);
+                }
+                if (supplier != null && receiver != null) {
+                    T oldValue = supplier.get();
+                    // Neither JConsole nor JMC have a built in way to display a custom AttributeChange notification
+                    receiver.accept(source -> new AttributeChangeNotification(source,
+                            sequenceNumber.getAndIncrement(), System.currentTimeMillis(),
+                            String.format("%s changed from %s to %s", name, oldValue, value), name, attributeClass.toString(),
+                            oldValue, value));
+                }
+                return true;
             }
-            return true;
+            return false;
+        } catch (Exception e) {
+            logger.error("Cannot set value {} on attribute {} with attributeClass {}", value, name, attributeClass.toString(), e);
+            throw e;
         }
-        return false;
     }
 
     public String getName() {
@@ -106,7 +133,7 @@ public class AttributeInfo<T> {
 
     public MBeanAttributeInfo getMBeanAttributeInfo() {
         return new MBeanAttributeInfo(name,
-                typeString,
+                attributeClass.toString(),
                 description,
                 supplier != null,
                 consumer != null,
@@ -166,7 +193,7 @@ public class AttributeInfo<T> {
             } else {
                 attributeType = (Class<T>) TypeResolver.resolveRawArgument(Consumer.class, consumer.getClass());
             }
-            return new AttributeInfo<T>(name, attributeType.getName(), description, supplier, consumer, descriptor);
+            return new AttributeInfo<T>(name, attributeType, description, supplier, consumer, descriptor);
         }
     }
 

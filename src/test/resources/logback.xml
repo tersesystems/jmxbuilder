@@ -1,0 +1,19 @@
+<configuration>
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+
+    <appender name="ROOT_APPENDER" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d %-5level [%thread] %logger{0}: %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="java.management" level="DEBUG"/>
+    <logger name="javax.management" level="DEBUG"/>
+    <logger name="com.sun.management" level="DEBUG"/>
+    <logger name="com.tersesystems.jmxbuilder" level="DEBUG"/>
+
+    <root level="INFO">
+        <appender-ref ref="ROOT_APPENDER" />
+    </root>
+
+</configuration>
