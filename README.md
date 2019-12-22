@@ -40,9 +40,9 @@ class UserExample {
         Address address = new Address("street1", "city", "state");
         final User user = new User("name", 12, address);
 
-        final DynamicMBean userBean = new DynamicBeanBuilder()
+        final DynamicMBean userBean = DynamicBean.builder()
                 .withSimpleAttribute("name", "User name", user::getName, user::setName)
-                .withSimpleAttribute("age", "User Age", user::getAge, user::setAge, new DescriptorBuilder().withUnits("years").build())
+                .withSimpleAttribute("age", "User Age", user::getAge, user::setAge, DescriptorSupport.builder().withUnits("years").build())
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems.jmxbuilder:type=UserBean,name=User");
@@ -96,7 +96,7 @@ public class CompositeExample {
         final User user = new User("name", 12, address);
         final CompositeItemBean<User> compositeItemBean = new CompositeItemBean<>(userWriter, () -> user);
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
+        final DynamicMBean userBean = DynamicBean.builder()
                 .withSimpleAttribute("User", "User", compositeItemBean::getItem)
                 .build();
 
@@ -136,7 +136,7 @@ public class TabularExample {
         final List<User> usersList = Collections.singletonList(new User("name", 12, address));
 
         TabularItemBean<User> tabularItemBean = new TabularItemBean<>(usersWriter, () -> usersList);
-        final DynamicMBean usersBean = new DynamicBean.Builder()
+        final DynamicMBean usersBean = DynamicBean.builder()
                 .withSimpleAttribute("Users", "Users Table", tabularItemBean::getItem)
                 .build();
 
@@ -157,7 +157,7 @@ Which looks like this:
 
 ## Operations
 
-You can also provide [operations]() to a builder, which is useful for services.  You can specify by passing in the function:
+You can also provide [operations](https://docs.oracle.com/javase/8/docs/api/javax/management/MBeanOperationInfo.html) to a builder, which is useful for services.  You can specify by passing in the function:
 
 ```java
 class ExampleService {
@@ -192,7 +192,7 @@ Or you can use reflection and just pass in the object you want the operation cal
 ```java
 public class DebugExample {
     public void exposeDebugMethods(Service service) {
-        final DynamicMBean debugBean = new DynamicBean.Builder()
+        final DynamicMBean debugBean = DynamicBean.builder()
                 .withOperation("isDebugEnabled", "returns true if is debugging", service)
                 .withOperation("setDebugEnabled", "sets debugging", service,
                         ParameterInfo.builder(Boolean.TYPE).withName("debug").build())
