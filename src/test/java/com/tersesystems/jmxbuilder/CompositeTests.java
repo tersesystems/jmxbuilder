@@ -23,12 +23,19 @@ import javax.management.Descriptor;
 import javax.management.DynamicMBean;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.TabularData;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CompositeTests {
+
+    private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+    OpenType<CompositeData> openType = openTypeMapper.fromClass(CompositeData.class);
 
     @Test
     public void testDynamicBeanWithCompositeAttribute() {
@@ -47,8 +54,9 @@ public class CompositeTests {
                 .withCompositeAttribute("address", "Address", user::getAddress, addressBuilder)
                 .build();
 
+
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo addressAttributeValue = new MBeanAttributeInfo("address", "javax.management.openmbean.CompositeData", "Address", true, false, false);
+        MBeanAttributeInfo addressAttributeValue = new OpenMBeanAttributeInfoSupport("address",  "Address", openType, true, false, false);
         assertThat(mBeanInfo.getAttributes()).contains(addressAttributeValue);
     }
 
@@ -72,7 +80,7 @@ public class CompositeTests {
                 .build();
 
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo addressAttributeValue = new MBeanAttributeInfo("address", "javax.management.openmbean.CompositeData", "Address", true, false, false, addressDescriptor);
+        MBeanAttributeInfo addressAttributeValue = new OpenMBeanAttributeInfoSupport("address", "Address", openType, true, false, false, addressDescriptor);
         assertThat(mBeanInfo.getAttributes()).contains(addressAttributeValue);
     }
 
@@ -93,19 +101,17 @@ public class CompositeTests {
                 .withCompositeDataWriter(addressWriter)
                 .build();
 
-        Descriptor addressDescriptor = DescriptorSupport.builder().withSince("1.0").withLocale("en-US").build();
-
         Address address1 = new Address("street1", "city", "state");
         Address address2 = new Address("street2", "city", "state");
         Address address3 = new Address("street3", "city", "state");
         List<Address> addresses = Arrays.asList(address1, address2, address3);
 
         final DynamicMBean userBean = new DynamicBean.Builder()
-                .withTabularAttribute("addresses", "Addresses", () -> addresses, addressesWriter, addressDescriptor)
+                .withTabularAttribute("addresses", "Addresses", () -> addresses, addressesWriter)
                 .build();
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo addressAttributeValue = new MBeanAttributeInfo("addresses", "javax.management.openmbean.TabularData", "Addresses", true, false, false, addressDescriptor);
+        OpenType<TabularData> tabularDataOpenType = openTypeMapper.fromClass(TabularData.class);
+        MBeanAttributeInfo addressAttributeValue = new OpenMBeanAttributeInfoSupport("addresses", "Addresses", tabularDataOpenType, true, false, false);
         assertThat(mBeanInfo.getAttributes()).contains(addressAttributeValue);
     }
-
 }

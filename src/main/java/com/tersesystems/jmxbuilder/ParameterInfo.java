@@ -18,35 +18,41 @@
 package com.tersesystems.jmxbuilder;
 
 import javax.management.Descriptor;
-import java.util.Optional;
+import javax.management.ObjectName;
+import javax.management.openmbean.*;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.*;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Parameter info.  Used to make method parameter names a bit more intelligible.
- *
+ * <p>
  * Intentionally open without a builder pattern so you can pass in your own.
  *
  * @param <T>
  */
 public final class ParameterInfo<T> {
-    private final Class<T> type;
+    private static final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+
+    private final OpenType<T> type;
     private final String name;
     private final String description;
     private final Descriptor descriptor;
 
-    public ParameterInfo(Class<T> type, String name) {
-        this(type, name, null, null);
+    public ParameterInfo(OpenType<T> type, String name) {
+        this(type, name, name, null);
     }
 
-    public ParameterInfo(Class<T> type, String name, String description, Descriptor descriptor) {
-        this.type = requireNonNull(type);
-        this.name = name;
-        this.description = description;
+    public ParameterInfo(OpenType<T> type, String name, String description, Descriptor descriptor) {
+        this.type = requireNonNull(type, "null type");
+        this.name = requireNonNull(name, "null name");
+        this.description = requireNonNull(description, "null description");
         this.descriptor = descriptor;
     }
 
-    public Class<T> getType() {
+    public OpenType<T> getType() {
         return type;
     }
 
@@ -58,32 +64,49 @@ public final class ParameterInfo<T> {
         return Optional.ofNullable(descriptor);
     }
 
-    public Optional<String> getDescription() {
-        return Optional.ofNullable(description);
+    public String getDescription() {
+        return description;
     }
 
-    public static <F> Builder<F> builder(Class<F> type) {
-        return new Builder<>(type);
+    public OpenMBeanParameterInfo getMBeanParameterInfo() {
+        return new OpenMBeanParameterInfoSupport(
+                getName(),
+                getDescription(),
+                getType(),
+                getDescriptor().orElse(null)
+        );
     }
 
-    // only type and name are required here
+    public static <F> Builder<F> builder(Class<F> clazz) {
+        return new Builder<F>(openTypeMapper.fromClass(clazz));
+    }
+
+    // Type, name and description are required.
     public static class Builder<F> {
-        private Class<F> type;
+        private OpenType<F> type;
         private String name;
         private String description;
-        private Descriptor descriptor;
+        private Descriptor descriptor = DescriptorSupport.builder().build();
 
-        Builder(Class<F> type) {
+        Builder(OpenType<F> type) {
             this.type = type;
         }
 
         public Builder<F> withName(String name) {
-            this.name = name;
+            String s =requireNonNull(name);
+            if (s.isEmpty()) {
+                throw new IllegalStateException("Empty description!");
+            }
+            this.name = s;
             return this;
         }
 
         public Builder<F> withDescription(String description) {
-            this.description = description;
+            String s = requireNonNull(description);
+            if (s.isEmpty()) {
+                throw new IllegalStateException("Empty description!");
+            }
+            this.description = s;
             return this;
         }
 
@@ -93,6 +116,17 @@ public final class ParameterInfo<T> {
         }
 
         public ParameterInfo<F> build() {
+            if (description == null || description.isEmpty()) {
+                description = name;
+            }
+
+            // if this is a boolean parameter, then we want the legal values to be true and false only.
+            if (type.getClassName().equals("java.lang.Boolean")) {
+                HashSet<Boolean> booleans = new HashSet<>();
+                booleans.add(Boolean.TRUE);
+                booleans.add(Boolean.FALSE);
+                descriptor.setField("legalValues", booleans);
+            }
             return new ParameterInfo<F>(type, name, description, descriptor);
         }
     }

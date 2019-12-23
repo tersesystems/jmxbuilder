@@ -20,23 +20,103 @@ package com.tersesystems.jmxbuilder;
 import com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory;
 import com.sun.jmx.mbeanserver.MXBeanMapping;
 import com.sun.jmx.mbeanserver.MXBeanMappingFactory;
+import net.jodah.typetools.TypeResolver;
 
+import javax.management.ObjectName;
+import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.OpenType;
+import javax.management.openmbean.TabularData;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Date;
 
 /**
  * Maps between a type and an OpenType.
- *
- * This uses internal Sun classes so compiler gets super judgy.
  */
 public class OpenTypeMapper {
+    private final MXBeanMappingFactory mappingFactory;
+    private OpenTypeMapper(MXBeanMappingFactory mappingFactory) {
+        this.mappingFactory = mappingFactory;
+    }
+    private OpenTypeMapper() {
+        this(DefaultMXBeanMappingFactory.DEFAULT);
+    }
 
-    public OpenType<?> toOpenType(Type type) throws OpenDataException {
-        // XXX only available in 1.8, dunno what you'd use in JDK 11
-        final MXBeanMappingFactory mappingFactory = DefaultMXBeanMappingFactory.DEFAULT;
-        final MXBeanMapping mapping = mappingFactory.mappingForType(type, mappingFactory);
-        return mapping.getOpenType();
+    public static OpenTypeMapper getInstance() {
+        return SingletonHolder.INSTANCE;
+    }
+
+    public <T> OpenType<T> fromClass(Class<T> clazz) {
+        return fromType(TypeResolver.reify(clazz));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> OpenType<T> fromType(Type type) {
+        try {
+            final MXBeanMapping mapping = mappingFactory.mappingForType(type, mappingFactory);
+            return (OpenType<T>) mapping.getOpenType();
+        } catch (OpenDataException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public <T> Class<T> getTypeAsClass(String className) {
+        if (className.equals("java.lang.Void")) {
+            return (Class<T>) Void.TYPE;
+        }
+        if (className.equals("java.lang.Boolean")) {
+            return (Class<T>) Boolean.TYPE;
+        }
+        if (className.equals("java.lang.Character")) {
+            return (Class<T>) Character.TYPE;
+        }
+        if (className.equals("java.lang.Byte")) {
+            return (Class<T>) Byte.TYPE;
+        }
+        if (className.equals("java.lang.Short")) {
+            return (Class<T>) Short.TYPE;
+        }
+        if (className.equals("java.lang.Integer")) {
+            return (Class<T>) Integer.TYPE;
+        }
+        if (className.equals("java.lang.Long")) {
+            return (Class<T>) Long.TYPE;
+        }
+        if (className.equals("java.lang.Float")) {
+            return (Class<T>) Float.TYPE;
+        }
+        if (className.equals("java.lang.Double")) {
+            return (Class<T>) Double.TYPE;
+        }
+        if (className.equals("java.lang.String")) {
+            return (Class<T>) String.class;
+        }
+        if (className.equals("java.math.BigDecimal")) {
+            return (Class<T>) BigDecimal.class;
+        }
+        if (className.equals("java.math.BigInteger")) {
+            return (Class<T>) BigInteger.class;
+        }
+        if (className.equals("java.util.Date")) {
+            return (Class<T>) Date.class;
+        }
+        if (className.equals("javax.management.ObjectName")) {
+            return (Class<T>) ObjectName.class;
+        }
+        if (className.equals(CompositeData.class.getName())) {
+            return (Class<T>) CompositeData.class;
+        }
+        if (className.equals(TabularData.class.getName())) {
+            return (Class<T>) TabularData.class;
+        }
+        throw new IllegalStateException("Not a legal opentype: " + className);
+    }
+
+
+    private static class SingletonHolder {
+        static final OpenTypeMapper INSTANCE = new OpenTypeMapper();
     }
 
 }

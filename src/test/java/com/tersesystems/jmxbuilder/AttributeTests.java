@@ -23,10 +23,14 @@ import javax.management.Descriptor;
 import javax.management.DynamicMBean;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
+import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
+import javax.management.openmbean.OpenType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class AttributeTests {
+
+    private OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
 
     @Test
     public void testDynamicBeanWithReadOnlyAttribute() {
@@ -37,8 +41,11 @@ public class AttributeTests {
                 .withSimpleAttribute("name", "User name", user::getName)
                 .build();
 
+
+        OpenType<String> stringOpenType = openTypeMapper.fromClass(String.class);
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo nameAttributeValue = new MBeanAttributeInfo("name", "java.lang.String", "User name", true, false, false);
+        MBeanAttributeInfo nameAttributeValue = new OpenMBeanAttributeInfoSupport("name", "user name", stringOpenType,
+                true, false, false);
         assertThat(mBeanInfo.getAttributes()).contains(nameAttributeValue);
     }
 
@@ -51,8 +58,9 @@ public class AttributeTests {
                 .withSimpleAttribute("name", "User name", user::setName)
                 .build();
 
+        OpenType<String> stringOpenType = openTypeMapper.fromClass(String.class);
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo nameAttributeValue = new MBeanAttributeInfo("name", "java.lang.String", "User name", false, true, false);
+        MBeanAttributeInfo nameAttributeValue = new OpenMBeanAttributeInfoSupport("name", "User name", stringOpenType, false, true, false);
         assertThat(mBeanInfo.getAttributes()).contains(nameAttributeValue);
     }
 
@@ -65,8 +73,9 @@ public class AttributeTests {
                 .withSimpleAttribute("name", "User name", user::getName, user::setName)
                 .build();
 
+        OpenType<String> stringOpenType = openTypeMapper.fromClass(String.class);
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo nameAttributeValue = new MBeanAttributeInfo("name", "java.lang.String", "User name", true, true, false);
+        MBeanAttributeInfo nameAttributeValue = new OpenMBeanAttributeInfoSupport("name",  "User name", stringOpenType, true, true, false);
         assertThat(mBeanInfo.getAttributes()).contains(nameAttributeValue);
     }
 
@@ -81,8 +90,9 @@ public class AttributeTests {
                 .withSimpleAttribute("age", "Age", user::getAge, user::setAge, ageDescriptor)
                 .build();
 
+        OpenType<Integer> integerOpenType = openTypeMapper.fromClass(Integer.class);
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo ageAttributeValue = new MBeanAttributeInfo("age", "java.lang.Integer", "Age", true, true, false, ageDescriptor);
+        MBeanAttributeInfo ageAttributeValue = new OpenMBeanAttributeInfoSupport("age", "Age", integerOpenType, true, true, false, ageDescriptor);
         assertThat(mBeanInfo.getAttributes()).contains(ageAttributeValue);
     }
 

@@ -21,8 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.management.*;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
+import javax.management.openmbean.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -80,11 +79,6 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         this.operationInfos = requireNonNull(operationInfos);
         this.notificationInfos = requireNonNull(notificationInfos);
         this.notifier = new NotificationBroadcasterSupport(notificationInfos.getExecutor(), notificationInfos.getMBeanNotificationInfos());
-    }
-
-    @Override
-    public MBeanInfo getMBeanInfo() {
-        return info;
     }
 
     @Override
@@ -148,6 +142,11 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
 
     public Object invoke(String actionName, Object[] params, String[] signature) throws MBeanException, ReflectionException {
         return operationInfos.invoke(this, actionName, params, signature);
+    }
+
+    @Override
+    public MBeanInfo getMBeanInfo() {
+        return info;
     }
 
     @Override
@@ -388,9 +387,9 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public DynamicBean build() {
-            MBeanInfo info = new MBeanInfo(className, description,
+            OpenMBeanInfoSupport info = new OpenMBeanInfoSupport(className, description,
                     attributeInfos.getMBeanAttributeInfos(),
-                    new MBeanConstructorInfo[0],
+                    new OpenMBeanConstructorInfo[0],
                     operationInfos.getMBeanOperationInfos(),
                     notificationInfos.getMBeanNotificationInfos(),
                     descriptorBuilder.build());
@@ -429,8 +428,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
                 return Optional.ofNullable(infos.remove(key));
             }
 
-            public MBeanAttributeInfo[] getMBeanAttributeInfos() {
-                return infos.keySet().stream().map(k -> infos.get(k).getMBeanAttributeInfo()).toArray(MBeanAttributeInfo[]::new);
+            public OpenMBeanAttributeInfo[] getMBeanAttributeInfos() {
+                return infos.keySet().stream().map(k -> infos.get(k).getMBeanAttributeInfo()).toArray(OpenMBeanAttributeInfo[]::new);
             }
         }
 
@@ -464,12 +463,12 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             }
 
             public void add(OperationInfo info) {
-                String[] signature = Arrays.stream(info.getSignature()).map(pi -> pi.getType().getName()).toArray(String[]::new);
+                String[] signature = Arrays.stream(info.getSignature()).map(pi -> pi.getType().getTypeName()).toArray(String[]::new);
                 operationMap.put(key(info.getName(), signature), info);
             }
 
-            public MBeanOperationInfo[] getMBeanOperationInfos() {
-                return operationMap.keySet().stream().map(k -> operationMap.get(k).getMBeanOperationInfo()).toArray(MBeanOperationInfo[]::new);
+            public OpenMBeanOperationInfo[] getMBeanOperationInfos() {
+                return operationMap.keySet().stream().map(k -> operationMap.get(k).getMBeanOperationInfo()).toArray(OpenMBeanOperationInfo[]::new);
             }
         }
 

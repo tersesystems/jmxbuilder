@@ -18,12 +18,13 @@
 package com.tersesystems.jmxbuilder;
 
 import net.jodah.typetools.TypeResolver;
-import org.slf4j.Logger;
 
 import javax.management.AttributeChangeNotification;
 import javax.management.Descriptor;
-import javax.management.MBeanAttributeInfo;
 import javax.management.Notification;
+import javax.management.openmbean.OpenMBeanAttributeInfo;
+import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
+import javax.management.openmbean.OpenType;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -38,10 +39,7 @@ import static java.util.Objects.requireNonNull;
  * Intentionally open so you can pass in your own if the builder pattern doesn't work.
  */
 public class AttributeInfo<T> {
-    private final Logger logger;
-
-    // Keep the class instance around to protect against type erasure
-    private final Class<T> attributeClass;
+    private final OpenType<?> openType;
     private final String name;
     private final String description;
     private final Supplier<? extends T> supplier;
@@ -50,30 +48,28 @@ public class AttributeInfo<T> {
 
     private final AtomicLong sequenceNumber = new AtomicLong(1L);
 
-    public AttributeInfo(String name, Class<T> attributeClass, Supplier<? extends T> supplier) {
-        this(name, attributeClass, null, supplier, null, null);
+    public AttributeInfo(String name, OpenType<T> openType, Supplier<? extends T> supplier) {
+        this(name, openType, name, supplier, null, null);
     }
 
-    public AttributeInfo(String name, Class<T> attributeClass, Supplier<? extends T> supplier, Consumer<? super T> consumer) {
-        this(name, attributeClass, null, supplier, consumer, null);
+    public AttributeInfo(String name, OpenType<T> openType, Supplier<? extends T> supplier, Consumer<? super T> consumer) {
+        this(name, openType, null, supplier, consumer, null);
     }
 
-    public AttributeInfo(String name, Class<T> attributeClass, String description, Supplier<? extends T> supplier, Consumer<? super T> consumer, Descriptor descriptor) {
+    public AttributeInfo(String name, OpenType<T> openType, String description, Supplier<? extends T> supplier, Consumer<? super T> consumer, Descriptor descriptor) {
         this.name = requireNonNull(name, "Null name");
-        this.attributeClass = requireNonNull(attributeClass, "Null attribute class");
-        this.description = description;
+        this.openType = requireNonNull(openType, "Null opentype");
+        this.description = requireNonNull(description, "Null description");
         this.supplier = supplier;
         this.consumer = consumer;
         this.descriptor = descriptor;
-        this.logger = org.slf4j.LoggerFactory.getLogger(getClass());
     }
 
     public Optional<T> get() {
         try {
             return Optional.ofNullable(supplier).map(Supplier::get);
         } catch (Exception e) {
-            logger.error("Cannot get from supplier", e);
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 
@@ -84,12 +80,12 @@ public class AttributeInfo<T> {
                 // so we can't do that.  Instead, map null to false, 0, "" depending on type.
                 if (value == null) {
                     // The function doesn't know if this is primitive or not.
-                    if (Boolean.class.equals(attributeClass)) {
+                    if (Boolean.class.equals(openType)) {
                         consumer.accept((T) Boolean.FALSE);
-                    } else if (String.class.equals(attributeClass)) {
+                    } else if (String.class.equals(openType)) {
                         consumer.accept((T) "");
                     } else {
-                        throw new IllegalStateException("Cannot map type " + attributeClass + " to null");
+                        throw new IllegalStateException("Cannot map type " + openType + " to null");
                     }
                 } else {
                     consumer.accept(value);
@@ -99,14 +95,14 @@ public class AttributeInfo<T> {
                     // Neither JConsole nor JMC have a built in way to display a custom AttributeChange notification
                     receiver.accept(source -> new AttributeChangeNotification(source,
                             sequenceNumber.getAndIncrement(), System.currentTimeMillis(),
-                            String.format("%s changed from %s to %s", name, oldValue, value), name, attributeClass.toString(),
+                            String.format("%s changed from %s to %s", name, oldValue, value), name, openType.toString(),
                             oldValue, value));
                 }
                 return true;
             }
             return false;
         } catch (Exception e) {
-            logger.error("Cannot set value {} on attribute {} with attributeClass {}", value, name, attributeClass.toString(), e);
+            //logger.error("Cannot set value {} on attribute {} with attributeClass {}", value, name, openType.toString(), e);
             throw e;
         }
     }
@@ -131,10 +127,10 @@ public class AttributeInfo<T> {
         return Optional.ofNullable(descriptor);
     }
 
-    public MBeanAttributeInfo getMBeanAttributeInfo() {
-        return new MBeanAttributeInfo(name,
-                attributeClass.toString(),
+    public OpenMBeanAttributeInfo getMBeanAttributeInfo() {
+        return new OpenMBeanAttributeInfoSupport(name,
                 description,
+                openType,
                 supplier != null,
                 consumer != null,
                 false,
@@ -146,6 +142,8 @@ public class AttributeInfo<T> {
     }
 
     public static class Builder<T> {
+        private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+
         private String name;
         private String description;
         private Supplier<? extends T> supplier;
@@ -181,6 +179,10 @@ public class AttributeInfo<T> {
         }
 
         public AttributeInfo<T> build() {
+            if (description == null || description.isEmpty()) {
+                description = name;
+            }
+
             if (supplier == null && consumer == null) {
                 throw new IllegalStateException("No supplier or consumer found!");
             }
@@ -193,7 +195,8 @@ public class AttributeInfo<T> {
             } else {
                 attributeType = (Class<T>) TypeResolver.resolveRawArgument(Consumer.class, consumer.getClass());
             }
-            return new AttributeInfo<T>(name, attributeType, description, supplier, consumer, descriptor);
+            OpenType<T> openType = openTypeMapper.fromClass(attributeType);
+            return new AttributeInfo<T>(name, openType, description, supplier, consumer, descriptor);
         }
     }
 

@@ -21,13 +21,17 @@ import net.jodah.typetools.TypeResolver;
 
 import javax.management.Descriptor;
 import javax.management.MBeanOperationInfo;
-import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
+import javax.management.openmbean.*;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -40,7 +44,7 @@ public class OperationInfo {
     private final String name;
     private final ParameterInfo<?>[] signature;
     private final String description;
-    private final String returnType;
+    private final OpenType<?> returnType;
     private final int impact;
     private final Descriptor descriptor;
     private final MethodInvoker invoker;
@@ -48,27 +52,27 @@ public class OperationInfo {
 
     public OperationInfo(String name,
                          ParameterInfo<?>[] signature,
-                         String returnType,
+                         OpenType<?> returnType,
                          MethodInvoker invoker) {
         this(name, signature, returnType, invoker, null, MBeanOperationInfo.UNKNOWN, null, null);
     }
 
     public OperationInfo(String name,
                          ParameterInfo<?>[] signature,
-                         String returnType,
+                         OpenType<?> returnType,
                          MethodInvoker invoker,
                          String description,
                          int impact, // See MBeanOperationInfo.UNKNOWN
                  Descriptor descriptor,
                  BiFunction<Object, Object, Notification> notifier) {
-        this.name = requireNonNull(name);
-        this.signature = requireNonNull(signature);
-        this.returnType = requireNonNull(returnType);
-        this.invoker = requireNonNull(invoker);
-        this.description = (description);
+        this.name = requireNonNull(name, "null name");
+        this.signature = requireNonNull(signature, "null signature");
+        this.returnType = requireNonNull(returnType, "null return type");
+        this.invoker = requireNonNull(invoker, "null invoker");
+        this.description = requireNonNull(description, "null description");
         this.impact = impact;
-        this.descriptor = (descriptor);
-        this.notifier = (notifier);
+        this.descriptor = descriptor;
+        this.notifier = notifier;
     }
 
     public String getName() {
@@ -79,11 +83,11 @@ public class OperationInfo {
         return signature;
     }
 
-    public Optional<String> getDescription() {
-        return Optional.ofNullable(description);
+    public String getDescription() {
+        return description;
     }
 
-    public String getReturnType() {
+    public OpenType<?> getReturnType() {
         return returnType;
     }
 
@@ -103,15 +107,14 @@ public class OperationInfo {
         return Optional.ofNullable(notifier);
     }
 
-    public MBeanOperationInfo getMBeanOperationInfo() {
-        MBeanParameterInfo[] mBeanParameterInfos = new MBeanParameterInfo[signature.length];
+    public OpenMBeanOperationInfo getMBeanOperationInfo() {
+        OpenMBeanParameterInfo[] mBeanParameterInfos = new OpenMBeanParameterInfo[signature.length];
         for (int i = 0; i < mBeanParameterInfos.length; i++) {
-            final ParameterInfo<?> parameter = signature[i];
-            String description = (String) parameter.getDescription().orElse(null);
-            mBeanParameterInfos[i] = new MBeanParameterInfo(parameter.getName(), parameter.getType().getName(), description);
+            final ParameterInfo<?> parameterInfo = signature[i];
+            mBeanParameterInfos[i] = parameterInfo.getMBeanParameterInfo();
         }
 
-        return new MBeanOperationInfo(name, description, mBeanParameterInfos, returnType, impact, descriptor);
+        return new OpenMBeanOperationInfoSupport(name, description, mBeanParameterInfos, returnType, impact, descriptor);
     }
 
     public static Builder builder() {
@@ -119,10 +122,12 @@ public class OperationInfo {
     }
 
     public static class Builder {
+        private static final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+
         private String name;
         private ParameterInfo<?>[] signature;
         private String description;
-        private String returnType;
+        private OpenType<?> returnType;
         private int impact;
         private final DescriptorSupport.Builder descriptorBuilder = DescriptorSupport.builder();
         private MethodInvoker invoker;
@@ -132,12 +137,12 @@ public class OperationInfo {
         }
 
         public Builder withName(String name) {
-            this.name = name;
+            this.name = requireNonNull(name, "null name");
             return this;
         }
 
         public Builder withDescription(String description) {
-            this.description = description;
+            this.description = requireNonNull(name, "null description");
             return this;
         }
 
@@ -154,7 +159,7 @@ public class OperationInfo {
         // no args, returns void
         public Builder withMethod(Runnable runnable) {
             ParameterInfo<?>[] signature = new ParameterInfo[0];
-            this.returnType = "java.lang.Void";
+            this.returnType = openTypeMapper.fromType(Void.TYPE);
             this.signature = signature;
             this.invoker = MethodInvoker.build(runnable);
             return this;
@@ -163,8 +168,7 @@ public class OperationInfo {
         // no args, returns R
         public <T> Builder withMethod(Supplier<T> supplier) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Supplier.class, supplier.getClass());
-
-            this.returnType = types[0].getName();
+            this.returnType = openTypeMapper.fromClass(types[0]);
             this.signature = new ParameterInfo[0];
             this.invoker = MethodInvoker.build(supplier);
             return this;
@@ -172,8 +176,10 @@ public class OperationInfo {
 
         public <T, R> Builder withMethod(Function<T, R> function, String paramName) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, function.getClass());
-            this.signature = new ParameterInfo[]{new ParameterInfo<T>((Class<T>) types[0], paramName)};
-            this.returnType = types[types.length - 1].getName();
+            this.signature = new ParameterInfo[]{
+                    new ParameterInfo<T>(openTypeMapper.fromClass((Class<T>) types[0]), paramName)
+            };
+            this.returnType = openTypeMapper.fromClass(types[types.length - 1]);
             this.invoker = MethodInvoker.build(function);
             return this;
         }
@@ -181,7 +187,7 @@ public class OperationInfo {
         public <T, R> Builder withMethod(Function<T, R> function, ParameterInfo<T> signature) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, function.getClass());
             this.signature = new ParameterInfo[]{signature};
-            this.returnType = types[types.length - 1].getName();
+            this.returnType = openTypeMapper.fromClass(types[types.length - 1]);
             this.invoker = MethodInvoker.build(function);
             return this;
         }
@@ -189,33 +195,46 @@ public class OperationInfo {
         public <T, U, R> Builder withMethod(BiFunction<T, U, R> biFunction, String arg1Name, String arg2Name) {
             Class<?>[] types = TypeResolver.resolveRawArguments(BiFunction.class, biFunction.getClass());
             this.signature = new ParameterInfo[]{
-                    new ParameterInfo<T>((Class<T>) types[0], arg1Name),
-                    new ParameterInfo<U>((Class<U>) types[1], arg2Name)
+                    new ParameterInfo<T>(openTypeMapper.fromClass((Class<T>) types[0]), arg1Name),
+                    new ParameterInfo<U>(openTypeMapper.fromClass((Class<U>) types[1]), arg2Name)
             };
-            this.returnType = types[types.length - 1].getName();
+            this.returnType = openTypeMapper.fromClass(types[types.length - 1]);
             this.invoker = MethodInvoker.build(biFunction);
             return this;
         }
 
-        public <T, U, R> Builder withMethod(BiFunction<T, U, R> biFunction, ParameterInfo<?>[] signature) {
+        public <T, U, R> Builder withMethod(BiFunction<T, U, R> biFunction, ParameterInfo<T> sig1, ParameterInfo<U> sig2) {
             Class<?>[] types = TypeResolver.resolveRawArguments(BiFunction.class, biFunction.getClass());
-            String returnType = types[types.length - 1].getName();
-            this.signature = signature;
-            this.returnType = returnType;
+            Class<?> returnClass = types[types.length - 1];
+            this.signature = new ParameterInfo[]{ sig1, sig2 };
+            this.returnType = openTypeMapper.fromClass(returnClass);
             this.invoker = MethodInvoker.build(biFunction);
             return this;
         }
 
         public <T> Builder withMethod(T obj, ParameterInfo<?>[] parameters) {
             try {
+                // First, find all the methods with a matching name.
+                Class<?> aClass = obj.getClass();
+                List<Method> methods = Arrays.stream(aClass.getMethods())
+                        .filter(m -> m.getName().equalsIgnoreCase(name))
+                        .filter(m -> m.getParameterCount() == parameters.length)
+                        .collect(Collectors.toList());
+
+                if (methods.isEmpty()) {
+                    throw new java.util.NoSuchElementException("No method found with name " +
+                            name + " and parameter count " + parameters.length);
+                }
+
                 Class<?>[] parameterClasses = new Class[parameters.length];
                 for (int i = 0; i < parameters.length; i++) {
-                    parameterClasses[i] = parameters[i].getType();
+                    String className = parameters[i].getType().getClassName();
+                    parameterClasses[i] = openTypeMapper.getTypeAsClass(className);
                 }
 
                 Method method = obj.getClass().getMethod(name, parameterClasses);
                 this.signature = parameters;
-                this.returnType = method.getReturnType().getName();
+                this.returnType = openTypeMapper.fromClass(method.getReturnType());
                 this.invoker = MethodInvoker.build(obj, method);
                 return this;
             } catch (NoSuchMethodException e) {
@@ -229,6 +248,9 @@ public class OperationInfo {
         }
 
         public OperationInfo build() {
+            if (description == null || description.isEmpty()) {
+                description = name;
+            }
             return new OperationInfo(name, signature, returnType, invoker, description, impact, descriptorBuilder.build(), notifier);
         }
 

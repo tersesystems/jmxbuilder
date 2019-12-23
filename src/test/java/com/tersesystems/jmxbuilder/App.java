@@ -85,10 +85,10 @@ public class App {
                 .withOperation("pong", "Pong the user", user::pong, "arg1")
                 .withOperation("concatenate", "Concatenate", user::concatenate, "arg1", "arg2")
                 .withOperation("callMethod", "Call method", user,
-                        new ParameterInfo<>(String.class, "arg1"),
-                        new ParameterInfo<>(String.class, "arg2"),
-                        new ParameterInfo<>(String.class, "arg3"),
-                        new ParameterInfo<>(String.class, "arg4")
+                        ParameterInfo.builder(String.class).withName("arg1").build(),
+                        ParameterInfo.builder(String.class).withName("arg2").build(),
+                        ParameterInfo.builder(String.class).withName("arg3").build(),
+                        ParameterInfo.builder(String.class).withName("arg4").build()
                 )
                 .withOperation(OperationInfo.builder()
                         .withName("notificationCallback")

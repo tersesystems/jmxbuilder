@@ -22,11 +22,14 @@ import java.util.Set;
 
 /**
  * Creates an instance of java.management.Descriptor.
+ *
+ * The values are inconsistent but an overview is at https://docs.oracle.com/javase/8/docs/api/javax/management/Descriptor.html
  */
 public class DescriptorSupport {
 
     public static Builder builder() {
-        return new Builder();
+        // Turn on enabled by default.
+        return new Builder().withEnabled(true);
     }
 
     public static class Builder {
@@ -53,7 +56,7 @@ public class DescriptorSupport {
         }
 
         public Builder withLocale(String locale) {
-            descriptor.setField(JMX.LEGAL_VALUES_FIELD, locale);
+            descriptor.setField("locale", locale);
             return this;
         }
 

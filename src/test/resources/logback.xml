@@ -1,5 +1,7 @@
 <configuration>
-    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator"/>
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
 
     <appender name="ROOT_APPENDER" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -9,6 +11,9 @@
 
     <logger name="java.management" level="DEBUG"/>
     <logger name="javax.management" level="DEBUG"/>
+    
+    <!-- FINEST -->
+    <logger name="javax.management.modelmbean" level="TRACE"/>
     <logger name="com.sun.management" level="DEBUG"/>
     <logger name="com.tersesystems.jmxbuilder" level="DEBUG"/>
 
