@@ -15,26 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tersesystems.jmxbuilder;
+package com.tersesystems.jmxbuilder.model;
 
 import static java.lang.String.format;
 
-class User {
+public class User {
     private String name;
     private Integer age;
     private final Address address;
 
-    User(String name, Integer age, Address address) {
+    public User(String name, Integer age, Address address) {
         this.name = name;
         this.age = age;
         this.address = address;
     }
 
-     String getName() {
+     public String getName() {
         return name;
     }
 
-    void setName(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 

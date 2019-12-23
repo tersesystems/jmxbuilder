@@ -17,6 +17,8 @@
  */
 package com.tersesystems.jmxbuilder;
 
+import com.tersesystems.jmxbuilder.model.Address;
+import com.tersesystems.jmxbuilder.model.User;
 import org.junit.jupiter.api.Test;
 
 import javax.management.Descriptor;
@@ -32,7 +34,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class CompositeTests {
+public class CompositeDataTests {
 
     private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
     OpenType<CompositeData> openType = openTypeMapper.fromClass(CompositeData.class);

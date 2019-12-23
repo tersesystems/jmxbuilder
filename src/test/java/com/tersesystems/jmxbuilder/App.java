@@ -17,6 +17,10 @@
  */
 package com.tersesystems.jmxbuilder;
 
+import com.tersesystems.jmxbuilder.model.Address;
+import com.tersesystems.jmxbuilder.model.ExampleService;
+import com.tersesystems.jmxbuilder.model.User;
+
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
@@ -85,10 +89,10 @@ public class App {
                 .withOperation("pong", "Pong the user", user::pong, "arg1")
                 .withOperation("concatenate", "Concatenate", user::concatenate, "arg1", "arg2")
                 .withOperation("callMethod", "Call method", user,
-                        ParameterInfo.builder(String.class).withName("arg1").build(),
-                        ParameterInfo.builder(String.class).withName("arg2").build(),
-                        ParameterInfo.builder(String.class).withName("arg3").build(),
-                        ParameterInfo.builder(String.class).withName("arg4").build()
+                        ParameterInfo.builder().withClassType(String.class).withName("arg1").build(),
+                        ParameterInfo.builder().withClassType(String.class).withName("arg2").build(),
+                        ParameterInfo.builder().withClassType(String.class).withName("arg3").build(),
+                        ParameterInfo.builder().withClassType(String.class).withName("arg4").build()
                 )
                 .withOperation(OperationInfo.builder()
                         .withName("notificationCallback")

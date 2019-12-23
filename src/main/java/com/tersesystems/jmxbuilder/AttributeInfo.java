@@ -21,6 +21,7 @@ import net.jodah.typetools.TypeResolver;
 
 import javax.management.AttributeChangeNotification;
 import javax.management.Descriptor;
+import javax.management.MBeanAttributeInfo;
 import javax.management.Notification;
 import javax.management.openmbean.OpenMBeanAttributeInfo;
 import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
@@ -109,7 +110,7 @@ public class AttributeInfo<T> {
         return Optional.ofNullable(descriptor);
     }
 
-    public OpenMBeanAttributeInfo getMBeanAttributeInfo() {
+    public MBeanAttributeInfo getMBeanAttributeInfo() {
         return new OpenMBeanAttributeInfoSupport(name,
                 description,
                 openType,
@@ -161,6 +162,11 @@ public class AttributeInfo<T> {
         }
 
         public AttributeInfo<T> build() {
+            // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
+            // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
+            // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be
+            // SimpleType.INTEGER.
+
             if (description == null || description.isEmpty()) {
                 description = name;
             }
@@ -178,6 +184,14 @@ public class AttributeInfo<T> {
                 attributeType = (Class<T>) TypeResolver.resolveRawArgument(Consumer.class, consumer.getClass());
             }
             OpenType<T> openType = openTypeMapper.fromClass(attributeType);
+
+            // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
+            // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
+            // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be
+            // SimpleType.INTEGER.
+            //
+            // The Descriptor for each of these objects will also have a field originalType that is a string
+            // representing the Java type that appeared in the MXBean interface.
             return new AttributeInfo<T>(name, openType, description, supplier, consumer, descriptor);
         }
     }

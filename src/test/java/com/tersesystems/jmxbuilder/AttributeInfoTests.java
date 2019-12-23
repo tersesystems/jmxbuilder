@@ -17,6 +17,8 @@
  */
 package com.tersesystems.jmxbuilder;
 
+import com.tersesystems.jmxbuilder.model.Address;
+import com.tersesystems.jmxbuilder.model.User;
 import org.junit.jupiter.api.Test;
 
 import javax.management.Descriptor;
@@ -28,7 +30,7 @@ import javax.management.openmbean.OpenType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class AttributeTests {
+public class AttributeInfoTests {
 
     private OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
 

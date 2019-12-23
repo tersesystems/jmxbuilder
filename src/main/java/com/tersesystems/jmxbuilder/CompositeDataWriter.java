@@ -18,16 +18,12 @@
 package com.tersesystems.jmxbuilder;
 
 import net.jodah.typetools.TypeResolver;
-import org.slf4j.Logger;
 
 import javax.management.openmbean.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import static java.util.Objects.requireNonNull;
 

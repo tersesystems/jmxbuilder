@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tersesystems.jmxbuilder;
+package com.tersesystems.jmxbuilder.model;
 
 import static java.lang.String.format;
 
-class Address {
+public class Address {
     private final String street1;
     private final String city;
     private final String state;
 
-    Address(String street1, String city, String state) {
+    public Address(String street1, String city, String state) {
         this.street1 = street1;
         this.city = city;
         this.state = state;

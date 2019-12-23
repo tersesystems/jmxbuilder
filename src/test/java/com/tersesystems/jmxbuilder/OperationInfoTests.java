@@ -30,7 +30,7 @@ import javax.management.openmbean.OpenType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class OperationTests {
+public class OperationInfoTests {
     private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
     static final OpenMBeanParameterInfo[] NO_PARAMS = new OpenMBeanParameterInfo[0];
 
@@ -98,7 +98,7 @@ public class OperationTests {
         final DynamicMBean loggerBean = new DynamicBean.Builder()
                 .withOperation("isDebugEnabled", "returns true if is debugging", service)
                 .withOperation("setDebugEnabled", "sets debugging", service,
-                        ParameterInfo.builder(Boolean.TYPE).withName("debug").withDescription("debug").build())
+                        ParameterInfo.builder().withClassType(Boolean.TYPE).withName("debug").withDescription("debug").build())
                 .build();
 
         MBeanInfo mBeanInfo = loggerBean.getMBeanInfo();

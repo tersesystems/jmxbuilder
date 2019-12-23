@@ -383,9 +383,11 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public DynamicBean build() {
-            OpenMBeanInfoSupport info = new OpenMBeanInfoSupport(className, description,
+
+            // https://docs.oracle.com/javase/8/docs/api/javax/management/MBeanInfo.html
+            MBeanInfo info = new MBeanInfo(className, description,
                     attributeInfos.getMBeanAttributeInfos(),
-                    new OpenMBeanConstructorInfo[0],
+                    new MBeanConstructorInfo[0],
                     operationInfos.getMBeanOperationInfos(),
                     notificationInfos.getMBeanNotificationInfos(),
                     descriptorBuilder.build());
@@ -424,8 +426,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
                 return Optional.ofNullable(infos.remove(key));
             }
 
-            public OpenMBeanAttributeInfo[] getMBeanAttributeInfos() {
-                return infos.keySet().stream().map(k -> infos.get(k).getMBeanAttributeInfo()).toArray(OpenMBeanAttributeInfo[]::new);
+            public MBeanAttributeInfo[] getMBeanAttributeInfos() {
+                return infos.keySet().stream().map(k -> infos.get(k).getMBeanAttributeInfo()).toArray(MBeanAttributeInfo[]::new);
             }
         }
 
