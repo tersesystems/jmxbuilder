@@ -20,7 +20,7 @@ spotless {
 
 dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+    //api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
 
     // https://mvnrepository.com/artifact/net.jodah/typetools
     implementation group: 'net.jodah', name: 'typetools', version: '0.6.1'

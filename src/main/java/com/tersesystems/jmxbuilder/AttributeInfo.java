@@ -74,22 +74,8 @@ public class AttributeInfo<T> {
     }
 
     public Boolean set(T value, Consumer<Function<T, Notification>> receiver) {
-        try {
             if (consumer != null) {
-                // if the consumer type is a primitive, then passing in a null will result in unboxing to a raw value.
-                // so we can't do that.  Instead, map null to false, 0, "" depending on type.
-                if (value == null) {
-                    // The function doesn't know if this is primitive or not.
-                    if (Boolean.class.equals(openType)) {
-                        consumer.accept((T) Boolean.FALSE);
-                    } else if (String.class.equals(openType)) {
-                        consumer.accept((T) "");
-                    } else {
-                        throw new IllegalStateException("Cannot map type " + openType + " to null");
-                    }
-                } else {
-                    consumer.accept(value);
-                }
+               consumer.accept(value);
                 if (supplier != null && receiver != null) {
                     T oldValue = supplier.get();
                     // Neither JConsole nor JMC have a built in way to display a custom AttributeChange notification
@@ -101,10 +87,6 @@ public class AttributeInfo<T> {
                 return true;
             }
             return false;
-        } catch (Exception e) {
-            //logger.error("Cannot set value {} on attribute {} with attributeClass {}", value, name, openType.toString(), e);
-            throw e;
-        }
     }
 
     public String getName() {

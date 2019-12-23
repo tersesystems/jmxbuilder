@@ -229,10 +229,21 @@ If you want to use JMX to pull out metrics from the JVM, then [JMXTrans](https:/
 
 If you are happy with Java annotations, I recommend [JMXWrapper](https://github.com/uklimaschewski/JMXWrapper) as a similar "no JMX manual required" solution.  JMXBuilder can also be used alongside JMXWrapper if that works better for you.
 
-## Further Reading
+## Internals
 
-If you really want to know how JMX works, the [specification](https://docs.oracle.com/javase/8/docs/technotes/guides/jmx/JMX_1_4_specification.pdf) is still the best available tool.  If you want the gory details, then Dustin Marx has the [definitive series](https://marxsoftware.blogspot.com/search/label/JMX) of blog posts going into detail of the JMX implementation.  The [JMX Accelerated HOWTO](http://docs.huihoo.com/howto/jmx/jmx.html) is also good.  Frankly, I recommend not reading any of this, as most of it is very dated and not needed as an end user.
+* https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html
 
+An MXBean is a type of Open MBean. However, for compatibility reasons, its MBeanInfo is not an OpenMBeanInfo. In particular, when the type of an attribute, parameter, or operation return value is a primitive type such as int, or is void (for a return type), then the attribute, parameter, or operation will be represented respectively by an MBeanAttributeInfo, MBeanParameterInfo, or MBeanOperationInfo whose getType() or getReturnType() returns the primitive name ("int" etc). This is so even though the mapping rules above specify that the opendata mapping is the wrapped type (Integer etc).
+
+The array of public constructors returned by MBeanInfo.getConstructors() for an MXBean that is directly registered in the MBean Server will contain all of the public constructors of that MXBean. If the class of the MXBean is not public then its constructors are not considered public either. The list returned for an MXBean that is constructed using the StandardMBean class is derived in the same way as for Standard MBeans. Regardless of how the MXBean was constructed, its constructor parameters are not subject to MXBean mapping rules and do not have a corresponding OpenType.
+
+The array of notification types returned by MBeanInfo.getNotifications() for an MXBean that is directly registered in the MBean Server will be empty if the MXBean does not implement the NotificationBroadcaster interface. Otherwise, it will be the result of calling NotificationBroadcaster.getNotificationInfo() at the time the MXBean was registered. Even if the result of this method changes subsequently, the result of MBeanInfo.getNotifications() will not. The list returned for an MXBean that is constructed using the StandardMBean or StandardEmitterMBean class is derived in the same way as for Standard MBeans.
+
+The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be SimpleType.INTEGER.
+
+The Descriptor for each of these objects will also have a field originalType that is a string representing the Java type that appeared in the MXBean interface. The format of this string is described in the section Type Names below.
+
+The Descriptor for the MBeanInfo will have a field mxbean whose value is the string "true".
 
 
 

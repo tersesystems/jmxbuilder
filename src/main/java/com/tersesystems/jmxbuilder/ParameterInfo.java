@@ -18,6 +18,8 @@
 package com.tersesystems.jmxbuilder;
 
 import javax.management.Descriptor;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
 import javax.management.ObjectName;
 import javax.management.openmbean.*;
 import java.math.BigDecimal;
@@ -68,7 +70,7 @@ public final class ParameterInfo<T> {
         return description;
     }
 
-    public OpenMBeanParameterInfo getMBeanParameterInfo() {
+    public MBeanParameterInfo getMBeanParameterInfo() {
         return new OpenMBeanParameterInfoSupport(
                 getName(),
                 getDescription(),

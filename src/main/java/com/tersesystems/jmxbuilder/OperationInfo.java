@@ -21,6 +21,7 @@ import net.jodah.typetools.TypeResolver;
 
 import javax.management.Descriptor;
 import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
 import javax.management.openmbean.*;
 import java.lang.reflect.Method;
@@ -107,8 +108,8 @@ public class OperationInfo {
         return Optional.ofNullable(notifier);
     }
 
-    public OpenMBeanOperationInfo getMBeanOperationInfo() {
-        OpenMBeanParameterInfo[] mBeanParameterInfos = new OpenMBeanParameterInfo[signature.length];
+    public MBeanOperationInfo getMBeanOperationInfo() {
+        MBeanParameterInfo[] mBeanParameterInfos = new MBeanParameterInfo[signature.length];
         for (int i = 0; i < mBeanParameterInfos.length; i++) {
             final ParameterInfo<?> parameterInfo = signature[i];
             mBeanParameterInfos[i] = parameterInfo.getMBeanParameterInfo();

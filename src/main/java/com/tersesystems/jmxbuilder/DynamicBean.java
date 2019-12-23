@@ -17,9 +17,6 @@
  */
 package com.tersesystems.jmxbuilder;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.management.*;
 import javax.management.openmbean.*;
 import java.lang.reflect.InvocationTargetException;
@@ -57,7 +54,6 @@ import static java.util.Objects.requireNonNull;
  * See https://github.com/tersesystems/jmxbuilder for details.
  */
 public class DynamicBean implements DynamicMBean, NotificationEmitter {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final MBeanInfo info;
     private final Builder.AttributeInfos attributeInfos;
     private final Builder.OperationInfos operationInfos;
@@ -112,7 +108,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
                     list.add(new Attribute(name, value));
                 }
             } catch (Exception e) {
-                logger.warn("Exception when getting attribute {}", name, e);
+                // OK: attribute is not included in returned list, per spec
+                // XXX: log the exception
             }
         }
         return list;
@@ -132,8 +129,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
                 attributeInfo.set(value, c);
                 retlist.add(attr);
             } else {
-                String msg = String.format("Cannot find %s in attributeInfos", attr.getName());
-                logger.warn(msg);
+                //String msg = String.format("Cannot find %s in attributeInfos", attr.getName());
                 //throw new AttributeNotFoundException(msg);
             }
         }
@@ -467,8 +463,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
                 operationMap.put(key(info.getName(), signature), info);
             }
 
-            public OpenMBeanOperationInfo[] getMBeanOperationInfos() {
-                return operationMap.keySet().stream().map(k -> operationMap.get(k).getMBeanOperationInfo()).toArray(OpenMBeanOperationInfo[]::new);
+            public MBeanOperationInfo[] getMBeanOperationInfos() {
+                return operationMap.keySet().stream().map(k -> operationMap.get(k).getMBeanOperationInfo()).toArray(MBeanOperationInfo[]::new);
             }
         }
 
