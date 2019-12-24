@@ -1,0 +1,23 @@
+plugins {
+    id 'application'
+}
+
+repositories {
+    jcenter()
+    mavenLocal()
+}
+
+// Type "gradle --continuous run" from command line to run this.
+application {
+    mainClassName = 'example.App'
+}
+
+dependencies {
+    //api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+    implementation "com.tersesystems.jmxbuilder:jmxbuilder:0.0.2"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
