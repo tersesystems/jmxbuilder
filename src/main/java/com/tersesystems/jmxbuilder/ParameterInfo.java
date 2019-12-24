@@ -19,6 +19,7 @@ package com.tersesystems.jmxbuilder;
 
 import javax.management.Descriptor;
 import javax.management.MBeanParameterInfo;
+import javax.management.openmbean.OpenType;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -67,10 +68,12 @@ public final class ParameterInfo<T> {
 
     // only type and name are required here
     public static class Builder {
+        private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+        private final DescriptorSupport.Builder descriptorBuilder = DescriptorSupport.builder();
+
         private Class<?> type;
         private String name;
         private String description;
-        private Descriptor descriptor;
 
         Builder() {}
 
@@ -90,19 +93,17 @@ public final class ParameterInfo<T> {
         }
 
         public Builder withDescriptor(Descriptor descriptor) {
-            this.descriptor = descriptor;
+            descriptorBuilder.withDescriptor(descriptor);
             return this;
         }
 
         public ParameterInfo build() {
-            // XXX fill this in.
-            // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
-            // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
-            // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be
-            // SimpleType.INTEGER.
-            //
-            // The Descriptor for each of these objects will also have a field originalType that is a string
-            // representing the Java type that appeared in the MXBean interface.
+            OpenType<?> openType = openTypeMapper.fromClass(type);
+            Descriptor descriptor = descriptorBuilder
+                    .withField("openType", openType)
+                    .withField("originalType", type.getName())
+                    .build();
+
             return new ParameterInfo(type, name, description, descriptor);
         }
     }

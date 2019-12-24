@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class OperationInfoTests {
 
-    private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
+    //private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
     static final MBeanParameterInfo[] NO_PARAMS = new MBeanParameterInfo[0];
 
     @Test
@@ -98,10 +98,15 @@ public class OperationInfoTests {
         descriptorSupport.setField("openType", SimpleType.VOID);
         descriptorSupport.setField("originalType", "void");
 
+        DescriptorSupport parameterDescriptor = new DescriptorSupport();
+        parameterDescriptor.setField("enabled", true);
+        parameterDescriptor.setField("openType", SimpleType.BOOLEAN);
+        parameterDescriptor.setField("originalType", "boolean");
+
         MBeanOperationInfo expected = new MBeanOperationInfo("setDebugEnabled",
                 "sets debugging",
                 new MBeanParameterInfo[] {
-                    new MBeanParameterInfo("debug", "boolean", null)
+                    new MBeanParameterInfo("debug", "boolean", null, parameterDescriptor)
                 },
                 "void",
                 MBeanOperationInfo.INFO,
