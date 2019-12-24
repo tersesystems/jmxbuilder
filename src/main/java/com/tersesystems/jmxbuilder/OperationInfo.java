@@ -27,6 +27,7 @@ import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -156,6 +157,20 @@ public class OperationInfo {
             this.returnType = "java.lang.Void";
             this.signature = signature;
             this.invoker = MethodInvoker.build(runnable);
+            return this;
+        }
+
+        public <T> Builder withMethod(Callable<T> callable, String paramName) {
+            Class<?>[] types = TypeResolver.resolveRawArguments(Callable.class, callable.getClass());
+            ParameterInfo<T> param = ParameterInfo.builder().withClassType((Class<T>) types[0]).withName(paramName).build();
+            return withMethod(callable, param);
+        }
+
+        public <T> Builder withMethod(Callable<T> callable, ParameterInfo<T> parameter) {
+            Class<?>[] types = TypeResolver.resolveRawArguments(Callable.class, callable.getClass());
+            this.signature = new ParameterInfo[]{parameter};
+            this.returnType = types[types.length - 1].getName();
+            this.invoker = MethodInvoker.build(callable);
             return this;
         }
 
