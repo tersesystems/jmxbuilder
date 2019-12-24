@@ -53,7 +53,7 @@ public class MethodInvoker {
         }
     }
 
-    public static MethodInvoker build(Callable callable) {
+    public static <T> MethodInvoker build(Callable<T> callable) {
         try {
             return build(callable, Callable.class.getMethod("call"));
         } catch (NoSuchMethodException e) {

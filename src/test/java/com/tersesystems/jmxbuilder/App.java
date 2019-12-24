@@ -82,13 +82,13 @@ public class App {
         final User user = new User("name", 12, address);
 
         final DynamicMBean userBean = new DynamicBean.Builder()
-                .withSimpleAttribute("name", "User name", user::getName, user::setName)
-                .withSimpleAttribute("age", "User Age", user::getAge, user::setAge, DescriptorSupport.builder().withUnits("years").build())
-                .withCompositeAttribute("address", "User Address", user::getAddress, addressWriter)
-                .withOperation("ping", "Ping the user", user::ping)
-                .withOperation("pong", "Pong the user", user::pong, "arg1")
-                .withOperation("concatenate", "Concatenate", user::concatenate, "arg1", "arg2")
-                .withOperation("callMethod", "Call method", user, "callMethod",
+                .withSimpleAttribute("name", user::getName, user::setName)
+                .withSimpleAttribute(Integer.TYPE,"age", user::getAge, user::setAge)
+                .withCompositeAttribute("address", user::getAddress, addressWriter)
+                .withOperation("ping", user::ping)
+                .withOperation("pong", user::pong, "arg1")
+                .withOperation("concatenate", user::concatenate, "arg1", "arg2")
+                .withOperation("callMethod", user, "callMethod",
                         ParameterInfo.builder().withClassType(String.class).withName("arg1").build(),
                         ParameterInfo.builder().withClassType(String.class).withName("arg2").build(),
                         ParameterInfo.builder().withClassType(String.class).withName("arg3").build(),
@@ -115,7 +115,7 @@ public class App {
         final CompositeItemBean<User> compositeItemBean = new CompositeItemBean<>(userWriter, () -> user);
 
         final DynamicMBean userBean = new DynamicBean.Builder()
-                .withSimpleAttribute("User", "User", compositeItemBean::getItem)
+                .withSimpleAttribute("User", compositeItemBean::getItem)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=CompositeBean");
@@ -131,7 +131,7 @@ public class App {
 
         TabularItemBean<User> tabularItemBean = new TabularItemBean<>(usersWriter, () -> usersList);
         final DynamicMBean usersBean = new DynamicBean.Builder()
-                .withSimpleAttribute("Users", "Users Table", tabularItemBean::getItem)
+                .withSimpleAttribute("Users", tabularItemBean::getItem)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=TabularBean");
@@ -146,12 +146,10 @@ public class App {
     public static void exampleBean() throws Exception {
         ExampleService service = new ExampleService();
         final DynamicMBean serviceBean = new DynamicBean.Builder()
-                .withSimpleAttribute(
+                .withSimpleAttribute(Boolean.TYPE,
                         "debugEnabled",
-                        "",
                         service::isDebugEnabled,
-                        service::setDebugEnabled,
-                        DescriptorSupport.builder().withImmutableInfo(false).build())
+                        service::setDebugEnabled)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=ServiceBean,name=ServiceBean");

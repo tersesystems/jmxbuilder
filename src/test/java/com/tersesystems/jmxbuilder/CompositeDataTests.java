@@ -130,7 +130,7 @@ public class CompositeDataTests {
         List<Address> addresses = Arrays.asList(address1, address2, address3);
 
         final DynamicMBean userBean = new DynamicBean.Builder()
-                .withTabularAttribute("addresses", "Addresses", () -> addresses, addressesWriter)
+                .withTabularAttribute("addresses", () -> addresses, addressesWriter)
                 .build();
         MBeanInfo mBeanInfo = userBean.getMBeanInfo();
         MBeanAttributeInfo expected = new MBeanAttributeInfo("addresses", "javax.management.openmbean.TabularData", "Addresses", true, false, false);

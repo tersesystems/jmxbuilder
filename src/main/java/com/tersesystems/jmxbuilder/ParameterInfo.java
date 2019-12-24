@@ -32,10 +32,6 @@ public final class ParameterInfo<T> {
     private final String description;
     private final Descriptor descriptor;
 
-    public ParameterInfo(Class<T> type, String name) {
-        this(type, name, null, null);
-    }
-
     public ParameterInfo(Class<T> type, String name, String description, Descriptor descriptor) {
         this.type = requireNonNull(type);
         this.name = name;
@@ -99,6 +95,7 @@ public final class ParameterInfo<T> {
         }
 
         public ParameterInfo build() {
+            // XXX fill this in.
             // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
             // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
             // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be

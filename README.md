@@ -47,8 +47,8 @@ class UserExample {
         final User user = new User("name", 12, address);
 
         final DynamicMBean userBean = DynamicBean.builder()
-                .withSimpleAttribute("name", "User name", user::getName, user::setName)
-                .withSimpleAttribute("age", "User Age", user::getAge, user::setAge, DescriptorSupport.builder().withUnits("years").build())
+                .withSimpleAttribute(String.class, "name", user::getName, user::setName)
+                .withSimpleAttribute(Integer.TYPE, "age", user::getAge, user::setAge)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems.jmxbuilder:type=UserBean,name=User");
@@ -61,10 +61,13 @@ This will provide something that looks like this:
 
 ![screenshot.png](screenshot.png)
 
-If you want to use primitive types, then you should use the `withBeanAttribute` property:
+
+> **NOTE**: JMXBuilder will attempt to infer the type when setting operations if it is not provided, but JMX has issues with primitive types.  Specify the type explicitly and use the `TYPE` field to be safe.
+
+If you want to use javabeans, then you should use the `withBeanAttribute` property:
 
 ```java
-public class DebugEnabled {
+public class DebugEnabledClass {
     private boolean debug;
 
     public boolean isDebugEnabled() {
@@ -76,9 +79,9 @@ public class DebugEnabled {
     }
 }
 
-// Note that if you're using a primitive boolean then you should specify Boolean.TYPE, etc.
+DebugEnabledClass debugEnabledClass = new DebugEnabledClass();
 final DynamicMBean serviceBean = DynamicBean.builder()
-        .withBeanAttribute("debugEnabled", "debug enabled", debugEnabledClass, "debugEnabled", Boolean.TYPE)
+        .withBeanAttribute(Boolean.TYPE, "debugAttributeName", debugEnabledClass, "debugEnabled")
         .build();
 ```
 
@@ -124,7 +127,7 @@ public class CompositeExample {
         final CompositeItemBean<User> compositeItemBean = new CompositeItemBean<>(userWriter, () -> user);
 
         final DynamicMBean userBean = DynamicBean.builder()
-                .withSimpleAttribute("User", "User", compositeItemBean::getItem)
+                .withSimpleAttribute("User", compositeItemBean::getItem)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=CompositeBean");
@@ -164,7 +167,7 @@ public class TabularExample {
 
         TabularItemBean<User> tabularItemBean = new TabularItemBean<>(usersWriter, () -> usersList);
         final DynamicMBean usersBean = DynamicBean.builder()
-                .withSimpleAttribute("Users", "Users Table", tabularItemBean::getItem)
+                .withSimpleAttribute("Users", tabularItemBean::getItem)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=TabularBean");
@@ -199,7 +202,7 @@ public class DumpExample {
     public void exposeDump(Service service) {
         static final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
         final DynamicMBean serviceBean = DynamicBean.builder()
-                .withOperation("dump", "dumps the internal state", service::dump)
+                .withOperation("dump", service::dump)
                 .build();
         // ...
     }
@@ -210,25 +213,16 @@ Or you can use reflection and just pass in the object you want the operation cal
 
 ```java
 public class DebugExample {
-    public void exposeDebugMethods(Service service) {
+    public void exposeDebugOperations(Service service) {
+        ParameterInfo paramInfo = ...;
         final DynamicMBean debugBean = DynamicBean.builder()
-                .withOperation("isDebugEnabled", "returns true if is debugging", service)
-                .withOperation("setDebugEnabled", "sets debugging", service,
-                        ParameterInfo.builder(Boolean.TYPE).withName("debug").build())
+                .withOperation("turnOnDebugForMinutes", service, "timedDebug", paramInfo)
                 .build();
         // ...
     }   
 
 }
 ```
-
-which looks like this:
-
-![operations.png](operations.png)
-
-## Notification
-
-[JMX Notification](https://docs.oracle.com/javase/tutorial/jmx/notifs/index.html) is not a very well supported feature, and I recommend you use something else rather than implementing it.  JMXBuilder does have full support for it though.
 
 ## Some Caveats
 
@@ -244,7 +238,9 @@ Again, do not use JMX-160 aka Java Remoting, as it is slow, fiddly, and [insecur
 
 Internally, the DynamicBean builder assembles a DynamicBean, using Open MBean type data in much the same way as an [MXBean](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html).   This is the same approach taken by [JMXWrapper.java](https://github.com/uklimaschewski/JMXWrapper/blob/master/src/com/udojava/jmx/wrapper/JMXBeanWrapper.java).
 
-JMX has so many different APIs and annotations that it  OpenMBean API has some issues, because it doesn't handle primitive types like `int` or `boolean`.  To correct this, the `MBeanInfo` returned is not an `OpenMBeanInfo` and there is some special case handling..  From the [MBeanInfo contents for an MXBean section](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html): 
+The DynamicBean consists of attributes, operations, and notifications which are put together from Info objects.  Each of these has their own builder APIs, i.e. `AttributeInfo` is created from `AttributeInfo.builder()`.  This allows for filling out details like the description and the descriptor, which aren't available from the default API.
+
+OpenMBean API has some issues, because it doesn't handle primitive types like `int` or `boolean`.  To correct this, the `MBeanInfo` returned is not an `OpenMBeanInfo` and there is some special case handling..  From the [MBeanInfo contents for an MXBean section](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html): 
 
 > An MXBean is a type of Open MBean. However, for compatibility reasons, its MBeanInfo is not an OpenMBeanInfo. In particular, when the type of an attribute, parameter, or operation return value is a primitive type such as int, or is void (for a return type), then the attribute, parameter, or operation will be represented respectively by an MBeanAttributeInfo, MBeanParameterInfo, or MBeanOperationInfo whose getType() or getReturnType() returns the primitive name ("int" etc). This is so even though the mapping rules above specify that the opendata mapping is the wrapped type (Integer etc).
 .
