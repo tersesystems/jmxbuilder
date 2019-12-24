@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tersesystems.jmxbuilder;
+package example;
 
 import com.tersesystems.jmxbuilder.model.Address;
 import com.tersesystems.jmxbuilder.model.ExampleService;
@@ -27,6 +27,8 @@ import javax.management.openmbean.TabularData;
 import java.lang.management.ManagementFactory;
 import java.util.*;
 import java.util.function.Supplier;
+
+import com.tersesystems.jmxbuilder.*;
 
 public class App {
     static final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
@@ -61,17 +63,18 @@ public class App {
             exampleBean();
 
             Scanner scanner = new Scanner(System.in);
-            try {
-                //noinspection InfiniteLoopStatement
-                while (true) {
-                    System.out.println("Waiting for input");
+            //noinspection InfiniteLoopStatement
+            while (true) {
+                try {
+                    //System.out.println("Waiting for input");
                     String line = scanner.nextLine();
-                    System.out.println("Closing...");
+                } catch (IllegalStateException | NoSuchElementException e) {
+                    // System.in has been closed
+                    //e.printStackTrace();
+                    //System.out.println("System.in was closed; exiting");
                 }
-            } catch (IllegalStateException | NoSuchElementException e) {
-                // System.in has been closed
-                System.out.println("System.in was closed; exiting");
             }
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -81,9 +84,9 @@ public class App {
         Address address = new Address("street1", "city", "state");
         final User user = new User("name", 12, address);
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
+        final DynamicMBean userBean = DynamicBean.builder()
                 .withSimpleAttribute("name", user::getName, user::setName)
-                .withSimpleAttribute(Integer.TYPE,"age", user::getAge, user::setAge)
+                .withSimpleAttribute(Integer.TYPE, "age", user::getAge, user::setAge)
                 .withCompositeAttribute("address", user::getAddress, addressWriter)
                 .withOperation("ping", user::ping)
                 .withOperation("pong", user::pong, "arg1")
@@ -114,7 +117,7 @@ public class App {
         final User user = new User("name", 12, address);
         final CompositeItemBean<User> compositeItemBean = new CompositeItemBean<>(userWriter, () -> user);
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
+        final DynamicMBean userBean = DynamicBean.builder()
                 .withSimpleAttribute("User", compositeItemBean::getItem)
                 .build();
 
@@ -130,7 +133,7 @@ public class App {
         final List<User> usersList = Collections.singletonList(new User("name", 12, address));
 
         TabularItemBean<User> tabularItemBean = new TabularItemBean<>(usersWriter, () -> usersList);
-        final DynamicMBean usersBean = new DynamicBean.Builder()
+        final DynamicMBean usersBean = DynamicBean.builder()
                 .withSimpleAttribute("Users", tabularItemBean::getItem)
                 .build();
 
@@ -145,7 +148,7 @@ public class App {
 
     public static void exampleBean() throws Exception {
         ExampleService service = new ExampleService();
-        final DynamicMBean serviceBean = new DynamicBean.Builder()
+        final DynamicMBean serviceBean = DynamicBean.builder()
                 .withSimpleAttribute(Boolean.TYPE,
                         "debugEnabled",
                         service::isDebugEnabled,
