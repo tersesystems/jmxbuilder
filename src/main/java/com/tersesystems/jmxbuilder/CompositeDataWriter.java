@@ -18,16 +18,12 @@
 package com.tersesystems.jmxbuilder;
 
 import net.jodah.typetools.TypeResolver;
-import org.slf4j.Logger;
 
 import javax.management.openmbean.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ServiceConfigurationError;
-import java.util.ServiceLoader;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import static java.util.Objects.requireNonNull;
 
@@ -74,16 +70,12 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
         }
     }
 
-    public static <I> Builder<I> builder() {
-        return new Builder();
+    public static <I> Builder<I> builder(Class<I> clazz) {
+        return new Builder<>();
     }
 
     public static class Builder<I> {
-        private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
-
-        private final ServiceLoader<OpenTypeMapper> loader = ServiceLoader.load(OpenTypeMapper.class);
-
-        private final OpenTypeMapper openTypeMapper = new OpenTypeMapper();
+        private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
 
         private String typeDescription;
         private String typeName;
@@ -95,7 +87,7 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
         Builder() {
         }
 
-        Builder<I> withTypeName(String typeName) {
+        public Builder<I> withTypeName(String typeName) {
             this.typeName = typeName;
             return this;
         }
@@ -148,7 +140,7 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
         }
 
         private OpenType<?> toOpenType(Type type) throws OpenDataException {
-            return openTypeMapper.toOpenType(type);
+            return openTypeMapper.fromType(type);
         }
 
         public CompositeDataWriter<I> build() {

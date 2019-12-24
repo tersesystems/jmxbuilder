@@ -17,6 +17,10 @@
  */
 package com.tersesystems.jmxbuilder;
 
+import com.tersesystems.jmxbuilder.model.Address;
+import com.tersesystems.jmxbuilder.model.ExampleService;
+import com.tersesystems.jmxbuilder.model.User;
+
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
@@ -27,7 +31,7 @@ import java.util.function.Supplier;
 public class App {
     static final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
-    static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.<Address>builder()
+    static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.builder(Address.class)
             .withTypeName("address")
             .withTypeDescription("Address")
             .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
@@ -35,14 +39,14 @@ public class App {
             .withSimpleAttribute("state", "State", Address::getState)
             .build();
 
-    static final CompositeDataWriter<User> userWriter = CompositeDataWriter.<User>builder()
+    static final CompositeDataWriter<User> userWriter = CompositeDataWriter.builder(User.class)
             .withTypeName("user")
             .withTypeDescription("User")
             .withSimpleAttribute("name", "Name", User::getName)
             .withSimpleAttribute("age", "Age", User::getAge)
             .withCompositeAttribute("address", "Address", User::getAddress, addressWriter).build();
 
-    static final TabularDataWriter<User> usersWriter = TabularDataWriter.<User>builder()
+    static final TabularDataWriter<User> usersWriter = TabularDataWriter.builder(User.class)
             .withTypeName("users")
             .withTypeDescription("Users")
             .withIndexName("name")
@@ -84,11 +88,11 @@ public class App {
                 .withOperation("ping", "Ping the user", user::ping)
                 .withOperation("pong", "Pong the user", user::pong, "arg1")
                 .withOperation("concatenate", "Concatenate", user::concatenate, "arg1", "arg2")
-                .withOperation("callMethod", "Call method", user,
-                        new ParameterInfo<>(String.class, "arg1"),
-                        new ParameterInfo<>(String.class, "arg2"),
-                        new ParameterInfo<>(String.class, "arg3"),
-                        new ParameterInfo<>(String.class, "arg4")
+                .withOperation("callMethod", "Call method", user, "callMethod",
+                        ParameterInfo.builder().withClassType(String.class).withName("arg1").build(),
+                        ParameterInfo.builder().withClassType(String.class).withName("arg2").build(),
+                        ParameterInfo.builder().withClassType(String.class).withName("arg3").build(),
+                        ParameterInfo.builder().withClassType(String.class).withName("arg4").build()
                 )
                 .withOperation(OperationInfo.builder()
                         .withName("notificationCallback")
@@ -142,9 +146,12 @@ public class App {
     public static void exampleBean() throws Exception {
         ExampleService service = new ExampleService();
         final DynamicMBean serviceBean = new DynamicBean.Builder()
-                .withOperation("isDebugEnabled", "returns true if is debugging", service)
-                .withOperation("setDebugEnabled", "sets debugging", service,
-                        ParameterInfo.builder(Boolean.TYPE).withName("debug").build())
+                .withSimpleAttribute(
+                        "debugEnabled",
+                        "",
+                        service::isDebugEnabled,
+                        service::setDebugEnabled,
+                        DescriptorSupport.builder().withImmutableInfo(false).build())
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=ServiceBean,name=ServiceBean");

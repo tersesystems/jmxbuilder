@@ -23,8 +23,14 @@ JMXBuilder is intended to help provide an admin interface for applications by ex
 JMXBuilder does not require you to understand the hairy internals of JMX.  It uses the [MXBean](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html) open type mappings, together with [CompositeData](https://docs.oracle.com/javase/8/docs/api/javax/management/openmbean/CompositeData.html) and [TabularData](https://docs.oracle.com/javase/8/docs/api/javax/management/openmbean/TabularData.html).  Roughly, the MXBean style exposes a "JSON style" for exposing information, where you keep things to strings, numbers, and booleans, and then composites are sub objects and tablular data are arrays.
  
 If you are running on your laptop, then I like using [Zulu Mission Control](https://www.azul.com/products/zulu-mission-control/).
+
+You should not use JMX Remoting, aka JSR-160, in production.  It uses Java serialization over RMI, which is fiddly to set up in production and exposes the server [Java Serialization attacks](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).  JSR-160 is much slower than JSON over HTTPS.  It does not cover user authentication (TLS client authentication only covers the channel), or deal with fine grained authorization.  And it's also harder for non-Java based tools to integrate with.
  
-If you want to use JMX remotely, you should use [Jolokia](https://jolokia.org/) as an agent to expose JMX over HTTP with the [appropriate authentication and authorization](https://jolokia.org/reference/html/security.html) and [Hawt.io](http://hawt.io/) to view it using an HTML GUI.  Don't worry, making a [JAAS module](https://docs.oracle.com/javase/10/security/jaas-authorization-tutorial.htm#JSSEC-GUID-D43CF965-8A5F-4A23-A2AF-F41DD5F8B411) isn't that hard.  **[DO NOT USE JMX REMOTING IN PRODUCTION](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).**
+If you want to use JMX remotely, you should use [Jolokia](https://jolokia.org/) as an agent to expose JMX over HTTP with the [appropriate authentication and authorization](https://jolokia.org/reference/html/security.html) and [Hawt.io](http://hawt.io/) to view it using an HTML GUI.  Making a [JAAS module](https://docs.oracle.com/javase/10/security/jaas-authorization-tutorial.htm#JSSEC-GUID-D43CF965-8A5F-4A23-A2AF-F41DD5F8B411) is pretty easy, and the Jolokia manual is comprehensive.
+
+If you want to use JMX to pull out metrics from the JVM, then [JMXTrans](https://www.jmxtrans.org/) or the [Prometheus JMX Exporter](https://github.com/prometheus/jmx_exporter) may be a good fit.  Alternately, you can pull the information that the JVM exposes through the system mbeans through [Yammer Metrics JVM instrumentation](https://metrics.dropwizard.io/4.1.2/manual/jvm.html) and then send that through one of the reporters there.
+
+If you are happy with Java annotations, I recommend [JMXWrapper](https://github.com/uklimaschewski/JMXWrapper) as a similar "no JMX manual required" solution.  JMXBuilder can also be used alongside JMXWrapper if that works better for you.
 
 ## Attributes
 
@@ -54,6 +60,27 @@ class UserExample {
 This will provide something that looks like this:
 
 ![screenshot.png](screenshot.png)
+
+If you want to use primitive types, then you should use the `withBeanAttribute` property:
+
+```java
+public class DebugEnabled {
+    private boolean debug;
+
+    public boolean isDebugEnabled() {
+        return debug;
+    }
+
+    public void setDebugEnabled(boolean debug) {
+        this.debug = debug;
+    }
+}
+
+// Note that if you're using a primitive boolean then you should specify Boolean.TYPE, etc.
+final DynamicMBean serviceBean = DynamicBean.builder()
+        .withBeanAttribute("debugEnabled", "debug enabled", debugEnabledClass, "debugEnabled", Boolean.TYPE)
+        .build();
+```
 
 ## Composites
 
@@ -166,14 +193,6 @@ class ExampleService {
     String dump() {
         return ("Dumping contents");
     }
-
-    public boolean isDebugEnabled() {
-        return debug;
-    }
-
-    public void setDebugEnabled(boolean debug) {
-        this.debug = debug;
-    }
 }
 
 public class DumpExample {
@@ -219,20 +238,22 @@ The platform MBeanServer is tied to the lifecycle of the JVM itself.  If you are
 
 JMX does not have any knowledge of thread safety, and doesn't provide any kind of protection for multiple clients calling operations concurrently.  
 
-Again, **[DO NOT USE JMX REMOTING IN PRODUCTION](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).**
+Again, do not use JMX-160 aka Java Remoting, as it is slow, fiddly, and [insecure](https://tersesystems.com/2015/11/08/closing-the-open-door-of-java-object-serialization/).
 
-## Metrics Options
+## Internals
 
-If you want to use JMX to pull out metrics from the JVM, then [JMXTrans](https://www.jmxtrans.org/) or the [Prometheus JMX Exporter](https://github.com/prometheus/jmx_exporter) may be a good fit.  Alternately, you can pull the information that the JVM exposes through the system mbeans through [Yammer Metrics JVM instrumentation](https://metrics.dropwizard.io/4.1.2/manual/jvm.html) and then send that through one of the reporters there.
+Internally, the DynamicBean builder assembles a DynamicBean, using Open MBean type data in much the same way as an [MXBean](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html).   This is the same approach taken by [JMXWrapper.java](https://github.com/uklimaschewski/JMXWrapper/blob/master/src/com/udojava/jmx/wrapper/JMXBeanWrapper.java).
 
-## Other Decent APIs
+JMX has so many different APIs and annotations that it  OpenMBean API has some issues, because it doesn't handle primitive types like `int` or `boolean`.  To correct this, the `MBeanInfo` returned is not an `OpenMBeanInfo` and there is some special case handling..  From the [MBeanInfo contents for an MXBean section](https://docs.oracle.com/javase/8/docs/api/javax/management/MXBean.html): 
 
-If you are happy with Java annotations, I recommend [JMXWrapper](https://github.com/uklimaschewski/JMXWrapper) as a similar "no JMX manual required" solution.  JMXBuilder can also be used alongside JMXWrapper if that works better for you.
-
-## Further Reading
-
-If you really want to know how JMX works, the [specification](https://docs.oracle.com/javase/8/docs/technotes/guides/jmx/JMX_1_4_specification.pdf) is still the best available tool.  If you want the gory details, then Dustin Marx has the [definitive series](https://marxsoftware.blogspot.com/search/label/JMX) of blog posts going into detail of the JMX implementation.  The [JMX Accelerated HOWTO](http://docs.huihoo.com/howto/jmx/jmx.html) is also good.  Frankly, I recommend not reading any of this, as most of it is very dated and not needed as an end user.
-
+> An MXBean is a type of Open MBean. However, for compatibility reasons, its MBeanInfo is not an OpenMBeanInfo. In particular, when the type of an attribute, parameter, or operation return value is a primitive type such as int, or is void (for a return type), then the attribute, parameter, or operation will be represented respectively by an MBeanAttributeInfo, MBeanParameterInfo, or MBeanOperationInfo whose getType() or getReturnType() returns the primitive name ("int" etc). This is so even though the mapping rules above specify that the opendata mapping is the wrapped type (Integer etc).
+.
+>
+> The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be SimpleType.INTEGER.
+> 
+> The Descriptor for each of these objects will also have a field originalType that is a string representing the Java type that appeared in the MXBean interface. The format of this string is described in the section Type Names below.
+>
+> The Descriptor for the MBeanInfo will have a field mxbean whose value is the string "true".
 
 
 

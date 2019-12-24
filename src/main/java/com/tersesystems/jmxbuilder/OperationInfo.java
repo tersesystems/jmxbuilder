@@ -23,6 +23,8 @@ import javax.management.Descriptor;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -33,8 +35,6 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * OperationInfo class.  This is an easier interface than MBeanOperationInfo.
- *
- * Intentionally open without a builder pattern so you can pass in your own.
  */
 public class OperationInfo {
     private final String name;
@@ -106,11 +106,8 @@ public class OperationInfo {
     public MBeanOperationInfo getMBeanOperationInfo() {
         MBeanParameterInfo[] mBeanParameterInfos = new MBeanParameterInfo[signature.length];
         for (int i = 0; i < mBeanParameterInfos.length; i++) {
-            final ParameterInfo<?> parameter = signature[i];
-            String description = (String) parameter.getDescription().orElse(null);
-            mBeanParameterInfos[i] = new MBeanParameterInfo(parameter.getName(), parameter.getType().getName(), description);
+            mBeanParameterInfos[i] = signature[i].getMBeanParameterInfo();
         }
-
         return new MBeanOperationInfo(name, description, mBeanParameterInfos, returnType, impact, descriptor);
     }
 
@@ -119,6 +116,8 @@ public class OperationInfo {
     }
 
     public static class Builder {
+        private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+
         private String name;
         private ParameterInfo<?>[] signature;
         private String description;
@@ -172,7 +171,7 @@ public class OperationInfo {
 
         public <T, R> Builder withMethod(Function<T, R> function, String paramName) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, function.getClass());
-            this.signature = new ParameterInfo[]{new ParameterInfo<T>((Class<T>) types[0], paramName)};
+            this.signature = new ParameterInfo[]{ParameterInfo.builder().withClassType((Class<T>) types[0]).withName(paramName).build()};
             this.returnType = types[types.length - 1].getName();
             this.invoker = MethodInvoker.build(function);
             return this;
@@ -189,8 +188,8 @@ public class OperationInfo {
         public <T, U, R> Builder withMethod(BiFunction<T, U, R> biFunction, String arg1Name, String arg2Name) {
             Class<?>[] types = TypeResolver.resolveRawArguments(BiFunction.class, biFunction.getClass());
             this.signature = new ParameterInfo[]{
-                    new ParameterInfo<T>((Class<T>) types[0], arg1Name),
-                    new ParameterInfo<U>((Class<U>) types[1], arg2Name)
+                ParameterInfo.builder().withClassType(types[0]).withName(arg1Name).build(),
+                ParameterInfo.builder().withClassType(types[1]).withName(arg2Name).build()
             };
             this.returnType = types[types.length - 1].getName();
             this.invoker = MethodInvoker.build(biFunction);
@@ -206,14 +205,28 @@ public class OperationInfo {
             return this;
         }
 
-        public <T> Builder withMethod(T obj, ParameterInfo<?>[] parameters) {
+        /**
+         * Sets up an operation to invoke a method using reflection.
+         *
+         * @param obj the object to call the reflected method on.
+         * @param methodName the method name on the class to call.
+         * @param parameters the parameter infos (this will go into the signature.
+         * @param <T> the type of the object to call the reflected method on.
+         * @return the modified builder.
+         *
+         * @throws RuntimeException if anything goes wrong.
+         */
+        public <T> Builder withReflection(T obj, String methodName, ParameterInfo<?>... parameters) {
             try {
+                requireNonNull(obj, "Null object");
+                requireNonNull(methodName, "Null methodName");
+
                 Class<?>[] parameterClasses = new Class[parameters.length];
                 for (int i = 0; i < parameters.length; i++) {
                     parameterClasses[i] = parameters[i].getType();
                 }
 
-                Method method = obj.getClass().getMethod(name, parameterClasses);
+                Method method = obj.getClass().getMethod(methodName, parameterClasses);
                 this.signature = parameters;
                 this.returnType = method.getReturnType().getName();
                 this.invoker = MethodInvoker.build(obj, method);
@@ -229,7 +242,21 @@ public class OperationInfo {
         }
 
         public OperationInfo build() {
-            return new OperationInfo(name, signature, returnType, invoker, description, impact, descriptorBuilder.build(), notifier);
+            // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
+            // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
+            // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be
+            // SimpleType.INTEGER.
+            //
+            // The Descriptor for each of these objects will also have a field originalType that is a string
+            // representing the Java type that appeared in the MXBean interface.
+            Class<?> typeAsClass = openTypeMapper.getTypeAsClass(returnType);
+            OpenType<?> openType = openTypeMapper.fromClass(typeAsClass);
+            Descriptor descriptor = descriptorBuilder
+                    .withField("openType", openType)
+                    .withField("originalType", returnType)
+                    .build();
+
+            return new OperationInfo(name, signature, returnType, invoker, description, impact, descriptor, notifier);
         }
 
     }

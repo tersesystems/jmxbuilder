@@ -22,15 +22,22 @@ import java.util.Set;
 
 /**
  * Creates an instance of java.management.Descriptor.
+ *
+ * The values are inconsistent but an overview is at https://docs.oracle.com/javase/8/docs/api/javax/management/Descriptor.html
  */
 public class DescriptorSupport {
 
     public static Builder builder() {
-        return new Builder();
+        // Turn on enabled by default.
+        return new Builder().withEnabled(true);
     }
 
     public static class Builder {
-        private final javax.management.modelmbean.DescriptorSupport descriptor = new javax.management.modelmbean.DescriptorSupport();
+        private final javax.management.modelmbean.DescriptorSupport descriptor;
+
+        Builder() {
+            descriptor = new javax.management.modelmbean.DescriptorSupport();
+        }
 
         public Builder withDefaultValue(Object defaultValue) {
             descriptor.setField(JMX.DEFAULT_VALUE_FIELD, defaultValue);
@@ -53,7 +60,7 @@ public class DescriptorSupport {
         }
 
         public Builder withLocale(String locale) {
-            descriptor.setField(JMX.LEGAL_VALUES_FIELD, locale);
+            descriptor.setField("locale", locale);
             return this;
         }
 
@@ -115,6 +122,11 @@ public class DescriptorSupport {
 
         public Builder withDescriptionResource(String descriptionResource) {
             descriptor.setField("descriptionResource", descriptionResource);
+            return this;
+        }
+
+        public Builder withField(String fieldName, Object fieldValue) {
+            descriptor.setField(fieldName, fieldValue);
             return this;
         }
 

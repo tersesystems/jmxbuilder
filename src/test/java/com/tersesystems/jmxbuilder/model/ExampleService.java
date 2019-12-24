@@ -1,9 +1,9 @@
-package com.tersesystems.jmxbuilder;
+package com.tersesystems.jmxbuilder.model;
 
 public class ExampleService {
     private boolean debug;
 
-    String dump() {
+    public String dump() {
         return ("Dumping contents");
     }
 

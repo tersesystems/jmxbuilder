@@ -18,16 +18,13 @@
 package com.tersesystems.jmxbuilder;
 
 import javax.management.Descriptor;
+import javax.management.MBeanParameterInfo;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
 /**
  * Parameter info.  Used to make method parameter names a bit more intelligible.
- *
- * Intentionally open without a builder pattern so you can pass in your own.
- *
- * @param <T>
  */
 public final class ParameterInfo<T> {
     private final Class<T> type;
@@ -62,38 +59,54 @@ public final class ParameterInfo<T> {
         return Optional.ofNullable(description);
     }
 
-    public static <F> Builder<F> builder(Class<F> type) {
-        return new Builder<>(type);
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public MBeanParameterInfo getMBeanParameterInfo() {
+        String description = getDescription().orElse(null);
+        Descriptor descriptor = getDescriptor().orElse(null);
+        return new MBeanParameterInfo(getName(), getType().getTypeName(), description, descriptor);
     }
 
     // only type and name are required here
-    public static class Builder<F> {
-        private Class<F> type;
+    public static class Builder {
+        private Class<?> type;
         private String name;
         private String description;
         private Descriptor descriptor;
 
-        Builder(Class<F> type) {
+        Builder() {}
+
+        public Builder withClassType(Class<?> type) {
             this.type = type;
+            return this;
         }
 
-        public Builder<F> withName(String name) {
+        public Builder withName(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder<F> withDescription(String description) {
+        public Builder withDescription(String description) {
             this.description = description;
             return this;
         }
 
-        public Builder<F> withDescriptor(Descriptor descriptor) {
+        public Builder withDescriptor(Descriptor descriptor) {
             this.descriptor = descriptor;
             return this;
         }
 
-        public ParameterInfo<F> build() {
-            return new ParameterInfo<F>(type, name, description, descriptor);
+        public ParameterInfo build() {
+            // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
+            // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
+            // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be
+            // SimpleType.INTEGER.
+            //
+            // The Descriptor for each of these objects will also have a field originalType that is a string
+            // representing the Java type that appeared in the MXBean interface.
+            return new ParameterInfo(type, name, description, descriptor);
         }
     }
 
