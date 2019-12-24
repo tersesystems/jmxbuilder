@@ -73,7 +73,7 @@ public final class ParameterInfo<T> {
 
         private Class<?> type;
         private String name;
-        private String description = "";
+        private String description;
 
         Builder() {}
 

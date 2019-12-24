@@ -106,7 +106,7 @@ public class OperationInfoTests {
         MBeanOperationInfo expected = new MBeanOperationInfo("setDebugEnabled",
                 "sets debugging",
                 new MBeanParameterInfo[] {
-                    new MBeanParameterInfo("debug", "boolean", "", parameterDescriptor)
+                    new MBeanParameterInfo("debug", "boolean", null, parameterDescriptor)
                 },
                 "void",
                 MBeanOperationInfo.INFO,
