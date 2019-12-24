@@ -17,15 +17,16 @@
  */
 package com.tersesystems.jmxbuilder;
 
-import net.jodah.typetools.TypeResolver;
-
 import javax.management.AttributeChangeNotification;
 import javax.management.Descriptor;
 import javax.management.MBeanAttributeInfo;
 import javax.management.Notification;
-import javax.management.openmbean.OpenMBeanAttributeInfo;
-import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenType;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -40,7 +41,7 @@ import static java.util.Objects.requireNonNull;
  * Intentionally open so you can pass in your own if the builder pattern doesn't work.
  */
 public class AttributeInfo<T> {
-    private final OpenType<?> openType;
+    private final String type;
     private final String name;
     private final String description;
     private final Supplier<? extends T> supplier;
@@ -49,17 +50,9 @@ public class AttributeInfo<T> {
 
     private final AtomicLong sequenceNumber = new AtomicLong(1L);
 
-    public AttributeInfo(String name, OpenType<T> openType, Supplier<? extends T> supplier) {
-        this(name, openType, name, supplier, null, null);
-    }
-
-    public AttributeInfo(String name, OpenType<T> openType, Supplier<? extends T> supplier, Consumer<? super T> consumer) {
-        this(name, openType, null, supplier, consumer, null);
-    }
-
-    public AttributeInfo(String name, OpenType<T> openType, String description, Supplier<? extends T> supplier, Consumer<? super T> consumer, Descriptor descriptor) {
+    public AttributeInfo(String name, String type, String description, Supplier<? extends T> supplier, Consumer<? super T> consumer, Descriptor descriptor) {
         this.name = requireNonNull(name, "Null name");
-        this.openType = requireNonNull(openType, "Null opentype");
+        this.type = requireNonNull(type, "Null type");
         this.description = requireNonNull(description, "Null description");
         this.supplier = supplier;
         this.consumer = consumer;
@@ -82,7 +75,7 @@ public class AttributeInfo<T> {
                     // Neither JConsole nor JMC have a built in way to display a custom AttributeChange notification
                     receiver.accept(source -> new AttributeChangeNotification(source,
                             sequenceNumber.getAndIncrement(), System.currentTimeMillis(),
-                            String.format("%s changed from %s to %s", name, oldValue, value), name, openType.toString(),
+                            String.format("%s changed from %s to %s", name, oldValue, value), name, type,
                             oldValue, value));
                 }
                 return true;
@@ -111,17 +104,18 @@ public class AttributeInfo<T> {
     }
 
     public MBeanAttributeInfo getMBeanAttributeInfo() {
-        return new OpenMBeanAttributeInfoSupport(name,
-                description,
-                openType,
-                supplier != null,
-                consumer != null,
-                false,
-                descriptor);
+        return new MBeanAttributeInfo(name, type, description, supplier != null, consumer != null, false, descriptor);
+        //        return new OpenMBeanAttributeInfoSupport(name,
+        //                description,
+        //                openType,
+        //                supplier != null,
+        //                consumer != null,
+        //                false,
+        //                descriptor);
     }
 
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> Builder<T> builder(Class<T> attributeType) {
+        return new Builder<>(attributeType);
     }
 
     public static class Builder<T> {
@@ -131,9 +125,11 @@ public class AttributeInfo<T> {
         private String description;
         private Supplier<? extends T> supplier;
         private Consumer<? super T> consumer;
-        private Descriptor descriptor;
+        private DescriptorSupport.Builder descriptorBuilder = DescriptorSupport.builder();
+        private final Class<T> attributeType;
 
-        Builder() {
+        Builder(Class<T> attributeType) {
+            this.attributeType = attributeType;
         }
 
         public Builder<T> withName(String name) {
@@ -147,7 +143,7 @@ public class AttributeInfo<T> {
         }
 
         public Builder<T> withDescriptor(Descriptor descriptor) {
-            this.descriptor = descriptor;
+            this.descriptorBuilder.withDescriptor(descriptor);
             return this;
         }
 
@@ -161,29 +157,44 @@ public class AttributeInfo<T> {
             return this;
         }
 
-        public AttributeInfo<T> build() {
-            // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
-            // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
-            // mapping rules above. So even when getType() is "int", getDescriptor().getField("openType") will be
-            // SimpleType.INTEGER.
+        public Builder<T> withBeanProperty(Object obj, String propertyName) {
+            try {
+                BeanInfo beanInfo = Introspector.getBeanInfo(obj.getClass());
+                Optional<PropertyDescriptor> maybeProperty = Arrays.stream(beanInfo.getPropertyDescriptors())
+                        .filter(pd -> pd.getName().equals(propertyName))
+                        .findFirst();
 
+                maybeProperty.ifPresent(pd -> {
+                    if (pd.getReadMethod() != null) {
+                        this.supplier = () -> {
+                            try {
+                                return (T) pd.getReadMethod().invoke(obj);
+                            } catch (IllegalAccessException | InvocationTargetException e) {
+                                e.printStackTrace();
+                            }
+                            return null;
+                        };
+                    }
+                    if (pd.getWriteMethod() != null) {
+                        this.consumer = newValue -> {
+                            try {
+                                pd.getWriteMethod().invoke(obj, newValue);
+                            } catch (IllegalAccessException | InvocationTargetException e) {
+                                e.printStackTrace();
+                            }
+                        };
+                    }
+                });
+                return this;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public AttributeInfo<T> build() {
             if (description == null || description.isEmpty()) {
                 description = name;
             }
-
-            if (supplier == null && consumer == null) {
-                throw new IllegalStateException("No supplier or consumer found!");
-            }
-
-            // resolveRawArgument doesn't seem to work on the AttributeInfoBuilder itself, but WILL
-            // work on the functions...
-            Class<T> attributeType;
-            if (supplier != null) {
-                attributeType = (Class<T>) TypeResolver.resolveRawArgument(Supplier.class, supplier.getClass());
-            } else {
-                attributeType = (Class<T>) TypeResolver.resolveRawArgument(Consumer.class, consumer.getClass());
-            }
-            OpenType<T> openType = openTypeMapper.fromClass(attributeType);
 
             // The Descriptor for all of the MBeanAttributeInfo, MBeanParameterInfo, and MBeanOperationInfo objects
             // contained in the MBeanInfo will have a field openType whose value is the OpenType specified by the
@@ -192,7 +203,13 @@ public class AttributeInfo<T> {
             //
             // The Descriptor for each of these objects will also have a field originalType that is a string
             // representing the Java type that appeared in the MXBean interface.
-            return new AttributeInfo<T>(name, openType, description, supplier, consumer, descriptor);
+            OpenType<?> openType = openTypeMapper.fromClass(attributeType);
+            String originalType = attributeType.getName();
+            Descriptor descriptor = descriptorBuilder
+                    .withField("openType", openType)
+                    .withField("originalType", originalType)
+                    .build();
+            return new AttributeInfo<T>(this.name, originalType, description, supplier, consumer, descriptor);
         }
     }
 

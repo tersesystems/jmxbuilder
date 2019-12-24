@@ -17,108 +17,96 @@
  */
 package com.tersesystems.jmxbuilder;
 
+import com.tersesystems.jmxbuilder.model.ExampleService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import javax.management.*;
 import javax.management.modelmbean.DescriptorSupport;
-import javax.management.openmbean.OpenMBeanOperationInfoSupport;
-import javax.management.openmbean.OpenMBeanParameterInfo;
-import javax.management.openmbean.OpenMBeanParameterInfoSupport;
-import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OperationInfoTests {
-    private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
-    static final OpenMBeanParameterInfo[] NO_PARAMS = new OpenMBeanParameterInfo[0];
 
-    static class ExampleService {
-        private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
-        private boolean debug;
-
-        String dump() {
-            return ("Dumping contents");
-        }
-
-        public boolean isDebugEnabled() {
-            return debug;
-        }
-
-        public void setDebugEnabled(boolean debug) {
-            this.debug = debug;
-        }
-    }
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(getClass());
+    static final MBeanParameterInfo[] NO_PARAMS = new MBeanParameterInfo[0];
 
     @Test
     @DisplayName("With Operation From Function")
     public void testOperationFromFunction() {
         ExampleService service = new ExampleService();
-        final DynamicMBean serviceBean = DynamicBean.builder()
-                .withOperation("dump", "dumps the internal state", service::dump)
+        OperationInfo info = OperationInfo.builder()
+                .withName("dump")
+                .withDescription("dumps the internal state")
+                .withMethod(service::dump)
                 .build();
 
-        MBeanInfo mBeanInfo = serviceBean.getMBeanInfo();
-        MBeanOperationInfo operationInfo = new OpenMBeanOperationInfoSupport("dump",
+        DescriptorSupport descriptorSupport = new DescriptorSupport();
+        descriptorSupport.setField("enabled", true);
+        descriptorSupport.setField("openType", SimpleType.STRING);
+        descriptorSupport.setField("originalType", "java.lang.String");
+
+        MBeanOperationInfo operationInfo = new MBeanOperationInfo("dump",
                 "dumps the internal state",
                 NO_PARAMS,
-                openTypeMapper.fromClass(Void.TYPE),
+                "java.lang.String",
                 MBeanOperationInfo.INFO,
-                new DescriptorSupport());
-        assertThat(mBeanInfo.getOperations()).contains(operationInfo);
+                descriptorSupport);
+        assertThat(info.getMBeanOperationInfo()).isEqualTo(operationInfo);
     }
 
-    @Test
-    @DisplayName("With Operation From Runnable")
-    public void testOperationFromRunnable() {
-        final DynamicMBean serviceBean = new DynamicBean.Builder()
-                .withOperation("dump", "dumps the internal state", new Runnable() {
-                    @Override
-                    public void run() {
-                        System.out.println("hello");
-                    }
-                })
-                .build();
 
-        MBeanInfo mBeanInfo = serviceBean.getMBeanInfo();
-        MBeanOperationInfo operationInfo = new OpenMBeanOperationInfoSupport("dump",
-                "dumps the internal state",
+    @Test
+    @DisplayName("With Operation From Reflection")
+    public void testOperationFromReflectionWithNoParams() {
+        DescriptorSupport descriptorSupport = new DescriptorSupport();
+        descriptorSupport.setField("enabled", true);
+        descriptorSupport.setField("openType", SimpleType.BOOLEAN);
+        descriptorSupport.setField("originalType", "boolean");
+
+        ExampleService service = new ExampleService();
+        OperationInfo info = OperationInfo.builder()
+                .withName("isDebugEnabled")
+                .withReflection(service, "isDebugEnabled")
+                .withDescription("returns true if is debugging")
+                .build();
+        MBeanOperationInfo operationInfo = new MBeanOperationInfo("isDebugEnabled",
+                "returns true if is debugging",
                 NO_PARAMS,
-                openTypeMapper.fromClass(Void.TYPE),
+                "boolean",
                 MBeanOperationInfo.INFO,
-                new DescriptorSupport());
-        assertThat(mBeanInfo.getOperations()).contains(operationInfo);
+                descriptorSupport);
+        assertThat(info.getMBeanOperationInfo()).isEqualTo(operationInfo);
     }
 
     @Test
     @DisplayName("With Operation From Parameter")
-    public void testOperationFromParameter() {
+    public void testOperationFromReflectionWithParameter() {
         ExampleService service = new ExampleService();
-        final DynamicMBean loggerBean = new DynamicBean.Builder()
-                .withOperation("isDebugEnabled", "returns true if is debugging", service)
-                .withOperation("setDebugEnabled", "sets debugging", service,
-                        ParameterInfo.builder().withClassType(Boolean.TYPE).withName("debug").withDescription("debug").build())
+
+        ParameterInfo debugParam = ParameterInfo.builder().withClassType(Boolean.TYPE).withName("debug").build();
+        OperationInfo info = OperationInfo.builder()
+                .withName("setDebugEnabled")
+                .withReflection(service, "setDebugEnabled", debugParam)
+                .withDescription("sets debugging")
                 .build();
 
-        MBeanInfo mBeanInfo = loggerBean.getMBeanInfo();
-        MBeanOperationInfo operationInfo = new OpenMBeanOperationInfoSupport("isDebugEnabled",
-                "returns true if is debugging",
-                NO_PARAMS,
-                openTypeMapper.fromClass(Boolean.TYPE),
-                MBeanOperationInfo.INFO,
-                new DescriptorSupport());
-        assertThat(mBeanInfo.getOperations()).contains(operationInfo);
+        DescriptorSupport descriptorSupport = new DescriptorSupport();
+        descriptorSupport.setField("enabled", true);
+        descriptorSupport.setField("openType", SimpleType.VOID);
+        descriptorSupport.setField("originalType", "void");
 
-        MBeanOperationInfo setInfo = new OpenMBeanOperationInfoSupport("setDebugEnabled",
+        MBeanOperationInfo expected = new MBeanOperationInfo("setDebugEnabled",
                 "sets debugging",
-                new OpenMBeanParameterInfoSupport[] {
-                    new OpenMBeanParameterInfoSupport("debug", "debug description", openTypeMapper.fromClass(Boolean.TYPE))
+                new MBeanParameterInfo[] {
+                    new MBeanParameterInfo("debug", "boolean", null)
                 },
-                openTypeMapper.fromClass(Void.TYPE),
+                "void",
                 MBeanOperationInfo.INFO,
-                new DescriptorSupport());
-        assertThat(mBeanInfo.getOperations()).contains(setInfo);
+                descriptorSupport);
 
+        assertThat(info.getMBeanOperationInfo()).isEqualTo(expected);
     }
 }

@@ -23,6 +23,8 @@ import javax.management.Descriptor;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -114,6 +116,8 @@ public class OperationInfo {
     }
 
     public static class Builder {
+        private final OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
+
         private String name;
         private ParameterInfo<?>[] signature;
         private String description;
@@ -201,14 +205,28 @@ public class OperationInfo {
             return this;
         }
 
-        public <T> Builder withMethod(T obj, ParameterInfo<?>[] parameters) {
+        /**
+         * Sets up an operation to invoke a method using reflection.
+         *
+         * @param obj the object to call the reflected method on.
+         * @param methodName the method name on the class to call.
+         * @param parameters the parameter infos (this will go into the signature.
+         * @param <T> the type of the object to call the reflected method on.
+         * @return the modified builder.
+         *
+         * @throws RuntimeException if anything goes wrong.
+         */
+        public <T> Builder withReflection(T obj, String methodName, ParameterInfo<?>... parameters) {
             try {
+                requireNonNull(obj, "Null object");
+                requireNonNull(methodName, "Null methodName");
+
                 Class<?>[] parameterClasses = new Class[parameters.length];
                 for (int i = 0; i < parameters.length; i++) {
                     parameterClasses[i] = parameters[i].getType();
                 }
 
-                Method method = obj.getClass().getMethod(name, parameterClasses);
+                Method method = obj.getClass().getMethod(methodName, parameterClasses);
                 this.signature = parameters;
                 this.returnType = method.getReturnType().getName();
                 this.invoker = MethodInvoker.build(obj, method);
@@ -231,7 +249,14 @@ public class OperationInfo {
             //
             // The Descriptor for each of these objects will also have a field originalType that is a string
             // representing the Java type that appeared in the MXBean interface.
-            return new OperationInfo(name, signature, returnType, invoker, description, impact, descriptorBuilder.build(), notifier);
+            Class<?> typeAsClass = openTypeMapper.getTypeAsClass(returnType);
+            OpenType<?> openType = openTypeMapper.fromClass(typeAsClass);
+            Descriptor descriptor = descriptorBuilder
+                    .withField("openType", openType)
+                    .withField("originalType", returnType)
+                    .build();
+
+            return new OperationInfo(name, signature, returnType, invoker, description, impact, descriptor, notifier);
         }
 
     }

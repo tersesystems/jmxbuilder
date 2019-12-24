@@ -18,15 +18,14 @@
 package com.tersesystems.jmxbuilder;
 
 import com.tersesystems.jmxbuilder.model.Address;
+import com.tersesystems.jmxbuilder.model.ExampleService;
 import com.tersesystems.jmxbuilder.model.User;
 import org.junit.jupiter.api.Test;
 
 import javax.management.Descriptor;
-import javax.management.DynamicMBean;
 import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanInfo;
-import javax.management.openmbean.OpenMBeanAttributeInfoSupport;
 import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,67 +34,110 @@ public class AttributeInfoTests {
     private OpenTypeMapper openTypeMapper = OpenTypeMapper.getInstance();
 
     @Test
-    public void testDynamicBeanWithReadOnlyAttribute() {
+    public void testReadOnlyAttribute() {
         Address address = new Address("street1", "city", "state");
         User user = new User("name", 12, address);
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
-                .withSimpleAttribute("name", "User name", user::getName)
+        AttributeInfo info = AttributeInfo.builder(String.class).withName("name")
+                .withDescription("User name")
+                .withSupplier(user::getName)
                 .build();
 
-
-        OpenType<String> stringOpenType = openTypeMapper.fromClass(String.class);
-        MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo nameAttributeValue = new OpenMBeanAttributeInfoSupport("name", "user name", stringOpenType,
-                true, false, false);
-        assertThat(mBeanInfo.getAttributes()).contains(nameAttributeValue);
+        MBeanAttributeInfo nameAttributeValue = new MBeanAttributeInfo("name", "java.lang.String", "User name", true, false, false, stringDescriptor());
+        assertThat(info.getMBeanAttributeInfo()).isEqualTo(nameAttributeValue);
     }
 
     @Test
-    public void testDynamicBeanWithWriteOnlyAttribute() {
+    public void testWriteOnlyAttribute() {
         Address address = new Address("street1", "city", "state");
         User user = new User("name", 12, address);
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
-                .withSimpleAttribute("name", "User name", user::setName)
+        AttributeInfo info = AttributeInfo.builder(String.class).withName("name")
+                .withDescription("User name")
+                .withConsumer(user::setName)
                 .build();
 
-        OpenType<String> stringOpenType = openTypeMapper.fromClass(String.class);
-        MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo nameAttributeValue = new OpenMBeanAttributeInfoSupport("name", "User name", stringOpenType, false, true, false);
-        assertThat(mBeanInfo.getAttributes()).contains(nameAttributeValue);
+        MBeanAttributeInfo nameAttributeValue = new MBeanAttributeInfo("name", "java.lang.String", "User name", false, true, false, stringDescriptor());
+        assertThat(info.getMBeanAttributeInfo()).isEqualTo(nameAttributeValue);
     }
 
     @Test
-    public void testDynamicBeanWithReadWriteAttribute() {
+    public void testReadWriteAttribute() {
         Address address = new Address("street1", "city", "state");
         User user = new User("name", 12, address);
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
-                .withSimpleAttribute("name", "User name", user::getName, user::setName)
+        AttributeInfo info = AttributeInfo.builder(String.class).withName("name")
+                .withDescription("User name")
+                .withSupplier(user::getName)
+                .withConsumer(user::setName)
                 .build();
 
         OpenType<String> stringOpenType = openTypeMapper.fromClass(String.class);
-        MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo nameAttributeValue = new OpenMBeanAttributeInfoSupport("name",  "User name", stringOpenType, true, true, false);
-        assertThat(mBeanInfo.getAttributes()).contains(nameAttributeValue);
+        MBeanAttributeInfo nameAttributeValue = new MBeanAttributeInfo("name", "java.lang.String", "User name", true, true, false, stringDescriptor());
+        assertThat(info.getMBeanAttributeInfo()).isEqualTo(nameAttributeValue);
     }
 
     @Test
-    public void testDynamicBeanWithReadWriteAttributeWithDescriptor() {
+    public void testReadWriteAttributeWithDescriptor() {
         Address address = new Address("street1", "city", "state");
         User user = new User("name", 12, address);
 
         Descriptor ageDescriptor = DescriptorSupport.builder().withMinValue(0).withMaxValue(120).withUnits("years").build();
 
-        final DynamicMBean userBean = new DynamicBean.Builder()
-                .withSimpleAttribute("age", "Age", user::getAge, user::setAge, ageDescriptor)
+        AttributeInfo<Integer> info = AttributeInfo.builder(Integer.TYPE).withName("age")
+                .withDescription("Age")
+                .withSupplier(user::getAge)
+                .withConsumer(user::setAge)
+                .withDescriptor(ageDescriptor)
                 .build();
 
         OpenType<Integer> integerOpenType = openTypeMapper.fromClass(Integer.class);
-        MBeanInfo mBeanInfo = userBean.getMBeanInfo();
-        MBeanAttributeInfo ageAttributeValue = new OpenMBeanAttributeInfoSupport("age", "Age", integerOpenType, true, true, false, ageDescriptor);
-        assertThat(mBeanInfo.getAttributes()).contains(ageAttributeValue);
+        MBeanAttributeInfo ageAttributeValue = new MBeanAttributeInfo("age", "int", "Age", true, true, false,
+                DescriptorSupport.builder()
+                .withDescriptor(ageDescriptor)
+                .withDescriptor(intDescriptor()).build());
+        assertThat(info.getMBeanAttributeInfo()).isEqualTo(ageAttributeValue);
     }
 
+    @Test
+    public void testReadWriteWithBoolean() {
+        ExampleService service = new ExampleService();
+        AttributeInfo<Boolean> info = AttributeInfo.builder(Boolean.TYPE)
+                .withName("debugEnabled")
+                .withDescription("Debug Description")
+                .withBeanProperty(service, "debugEnabled")
+                .build();
+
+        MBeanAttributeInfo actual = new MBeanAttributeInfo(
+                "debugEnabled",
+                "boolean",
+                "Debug Description",
+                true, true, false, booleanDescriptor());
+        assertThat(info.getMBeanAttributeInfo()).isEqualTo(actual);
+    }
+
+    private Descriptor stringDescriptor() {
+        Descriptor nameDescriptor = new javax.management.modelmbean.DescriptorSupport();
+        nameDescriptor.setField("openType", SimpleType.STRING);
+        nameDescriptor.setField("originalType", "java.lang.String");
+        nameDescriptor.setField("enabled", true);
+        return nameDescriptor;
+    }
+
+    private Descriptor booleanDescriptor() {
+        Descriptor nameDescriptor = new javax.management.modelmbean.DescriptorSupport();
+        nameDescriptor.setField("openType", SimpleType.BOOLEAN);
+        nameDescriptor.setField("originalType", "boolean");
+        nameDescriptor.setField("enabled", true);
+        return nameDescriptor;
+    }
+
+
+    private Descriptor intDescriptor() {
+        Descriptor nameDescriptor = new javax.management.modelmbean.DescriptorSupport();
+        nameDescriptor.setField("openType", SimpleType.INTEGER);
+        nameDescriptor.setField("originalType", "int");
+        nameDescriptor.setField("enabled", true);
+        return nameDescriptor;
+    }
 }

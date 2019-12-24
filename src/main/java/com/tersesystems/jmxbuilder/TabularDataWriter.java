@@ -58,7 +58,7 @@ public class TabularDataWriter<I> implements Function<Iterable<I>, TabularData> 
         return tabularDataSupport;
     }
 
-    public static <I> Builder<I> builder() {
+    public static <I> Builder<I> builder(Class<I> clazz) {
         return new Builder<I>();
     }
 

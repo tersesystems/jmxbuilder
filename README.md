@@ -61,6 +61,27 @@ This will provide something that looks like this:
 
 ![screenshot.png](screenshot.png)
 
+If you want to use primitive types, then you should use the `withBeanAttribute` property:
+
+```java
+public class DebugEnabled {
+    private boolean debug;
+
+    public boolean isDebugEnabled() {
+        return debug;
+    }
+
+    public void setDebugEnabled(boolean debug) {
+        this.debug = debug;
+    }
+}
+
+// Note that if you're using a primitive boolean then you should specify Boolean.TYPE, etc.
+final DynamicMBean serviceBean = DynamicBean.builder()
+        .withBeanAttribute("debugEnabled", "debug enabled", debugEnabledClass, "debugEnabled", Boolean.TYPE)
+        .build();
+```
+
 ## Composites
 
 You can also specify composite data more generally and build up a mapping of data, exposing the user and the address by using a `CompositeDataWriter` to expose `User` and `Address` information in a nested "tree" interface.
@@ -171,14 +192,6 @@ class ExampleService {
 
     String dump() {
         return ("Dumping contents");
-    }
-
-    public boolean isDebugEnabled() {
-        return debug;
-    }
-
-    public void setDebugEnabled(boolean debug) {
-        this.debug = debug;
     }
 }
 

@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 public class App {
     static final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
-    static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.<Address>builder()
+    static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.builder(Address.class)
             .withTypeName("address")
             .withTypeDescription("Address")
             .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
@@ -39,14 +39,14 @@ public class App {
             .withSimpleAttribute("state", "State", Address::getState)
             .build();
 
-    static final CompositeDataWriter<User> userWriter = CompositeDataWriter.<User>builder()
+    static final CompositeDataWriter<User> userWriter = CompositeDataWriter.builder(User.class)
             .withTypeName("user")
             .withTypeDescription("User")
             .withSimpleAttribute("name", "Name", User::getName)
             .withSimpleAttribute("age", "Age", User::getAge)
             .withCompositeAttribute("address", "Address", User::getAddress, addressWriter).build();
 
-    static final TabularDataWriter<User> usersWriter = TabularDataWriter.<User>builder()
+    static final TabularDataWriter<User> usersWriter = TabularDataWriter.builder(User.class)
             .withTypeName("users")
             .withTypeDescription("Users")
             .withIndexName("name")
@@ -88,7 +88,7 @@ public class App {
                 .withOperation("ping", "Ping the user", user::ping)
                 .withOperation("pong", "Pong the user", user::pong, "arg1")
                 .withOperation("concatenate", "Concatenate", user::concatenate, "arg1", "arg2")
-                .withOperation("callMethod", "Call method", user,
+                .withOperation("callMethod", "Call method", user, "callMethod",
                         ParameterInfo.builder().withClassType(String.class).withName("arg1").build(),
                         ParameterInfo.builder().withClassType(String.class).withName("arg2").build(),
                         ParameterInfo.builder().withClassType(String.class).withName("arg3").build(),

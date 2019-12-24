@@ -37,9 +37,11 @@ import java.util.Date;
  */
 public class OpenTypeMapper {
     private final MXBeanMappingFactory mappingFactory;
+
     private OpenTypeMapper(MXBeanMappingFactory mappingFactory) {
         this.mappingFactory = mappingFactory;
     }
+
     private OpenTypeMapper() {
         this(DefaultMXBeanMappingFactory.DEFAULT);
     }
@@ -62,56 +64,84 @@ public class OpenTypeMapper {
         }
     }
 
-    public <T> Class<T> getTypeAsClass(String className) {
-        if (className.equals("java.lang.Void")) {
-            return (Class<T>) Void.TYPE;
+    public Class<?> getTypeAsClass(String typeName) {
+
+        if (typeName.equals("void")) {
+            return Void.TYPE;
+        } else if (typeName.equals("java.lang.Void")) {
+            return Void.class;
         }
-        if (className.equals("java.lang.Boolean")) {
-            return (Class<T>) Boolean.TYPE;
+
+        if (typeName.equals("boolean")) {
+            return Boolean.TYPE;
+        } else if (typeName.equals("java.lang.Boolean")) {
+            return Boolean.class;
         }
-        if (className.equals("java.lang.Character")) {
-            return (Class<T>) Character.TYPE;
+
+        if (typeName.equals("char")) {
+            return Character.TYPE;
+        } else if (typeName.equals("java.lang.Character")) {
+            return Character.class;
         }
-        if (className.equals("java.lang.Byte")) {
-            return (Class<T>) Byte.TYPE;
+
+        if (typeName.equals("byte")) {
+            return Byte.TYPE;
+        } else if (typeName.equals("java.lang.Byte")) {
+            return Byte.class;
         }
-        if (className.equals("java.lang.Short")) {
-            return (Class<T>) Short.TYPE;
+
+        if (typeName.equals("short")) {
+            return Short.TYPE;
+        } else if (typeName.equals("java.lang.Short")) {
+            return Short.class;
         }
-        if (className.equals("java.lang.Integer")) {
-            return (Class<T>) Integer.TYPE;
+
+        if (typeName.equals("int")) {
+            return Integer.TYPE;
+        } else if (typeName.equals("java.lang.Integer")) {
+            return Integer.class;
         }
-        if (className.equals("java.lang.Long")) {
-            return (Class<T>) Long.TYPE;
+
+        if (typeName.equals("long")) {
+            return Long.TYPE;
+        } else if (typeName.equals("java.lang.Long")) {
+            return Long.class;
         }
-        if (className.equals("java.lang.Float")) {
-            return (Class<T>) Float.TYPE;
+
+        if (typeName.equals("float")) {
+            return Float.TYPE;
+        } else if (typeName.equals("java.lang.Float")) {
+            return Float.class;
         }
-        if (className.equals("java.lang.Double")) {
-            return (Class<T>) Double.TYPE;
+
+        if (typeName.equals("double")) {
+            return Double.TYPE;
+        } else if (typeName.equals("java.lang.Double")) {
+            return Double.class;
         }
-        if (className.equals("java.lang.String")) {
-            return (Class<T>) String.class;
+
+        if (typeName.equals("java.lang.String")) {
+            return String.class;
         }
-        if (className.equals("java.math.BigDecimal")) {
-            return (Class<T>) BigDecimal.class;
+        if (typeName.equals("java.math.BigDecimal")) {
+            return BigDecimal.class;
         }
-        if (className.equals("java.math.BigInteger")) {
-            return (Class<T>) BigInteger.class;
+        if (typeName.equals("java.math.BigInteger")) {
+            return BigInteger.class;
         }
-        if (className.equals("java.util.Date")) {
-            return (Class<T>) Date.class;
+        if (typeName.equals("java.util.Date")) {
+            return Date.class;
         }
-        if (className.equals("javax.management.ObjectName")) {
-            return (Class<T>) ObjectName.class;
+        if (typeName.equals("javax.management.ObjectName")) {
+            return ObjectName.class;
         }
-        if (className.equals(CompositeData.class.getName())) {
-            return (Class<T>) CompositeData.class;
+        if (typeName.equals(CompositeData.class.getName())) {
+            return CompositeData.class;
         }
-        if (className.equals(TabularData.class.getName())) {
-            return (Class<T>) TabularData.class;
+        if (typeName.equals(TabularData.class.getName())) {
+            return TabularData.class;
         }
-        throw new IllegalStateException("Not a legal opentype: " + className);
+        throw new IllegalStateException("Not a legal opentype: " + typeName);
     }
 
 

@@ -17,6 +17,8 @@
  */
 package com.tersesystems.jmxbuilder;
 
+import net.jodah.typetools.TypeResolver;
+
 import javax.management.*;
 import javax.management.openmbean.*;
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * A dynamic bean that extends DynamicMBean and can be constructed through a fluent builder pattern.
- *
+ * <p>
  * {@code <pre>
  * public class Service {
  *     public void createServiceBean() {
@@ -50,7 +52,7 @@ import static java.util.Objects.requireNonNull;
  *     }
  * }
  * </pre>}
- *
+ * <p>
  * See https://github.com/tersesystems/jmxbuilder for details.
  */
 public class DynamicBean implements DynamicMBean, NotificationEmitter {
@@ -181,7 +183,10 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         private final AttributeInfos attributeInfos = new AttributeInfos();
         private final OperationInfos operationInfos = new OperationInfos();
         private final NotificationInfos notificationInfos = new NotificationInfos();
-        private final DescriptorSupport.Builder descriptorBuilder = DescriptorSupport.builder();
+
+        // The Descriptor for the MBeanInfo will have a field `mxbean` whose value is the string "true".
+        private final DescriptorSupport.Builder descriptorBuilder = DescriptorSupport.builder()
+                .withField(" mxbean", "true");
 
         private String className = "";
         private String description = "";
@@ -199,8 +204,20 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             return this;
         }
 
+        /**
+         * Uses javabean property to pull the attribute out, given a javabean property name and the class of the property.
+         */
+        public <T> Builder withBeanAttribute(String name, String description, Object object, String propertyName, Class<T> propertyType) {
+            AttributeInfo<T> info = AttributeInfo.builder(propertyType).withName(name)
+                    .withDescription(description)
+                    .withBeanProperty(object, propertyName)
+                    .build();
+            return withAttribute(info);
+        }
+
         public <T> Builder withSimpleAttribute(String name, String description, Supplier<T> reader) {
-            AttributeInfo<T> info = AttributeInfo.<T>builder().withName(name)
+            Class<T> attributeType = (Class<T>) TypeResolver.resolveRawArgument(Supplier.class, reader.getClass());
+            AttributeInfo<T> info = AttributeInfo.builder(attributeType).withName(name)
                     .withDescription(description)
                     .withSupplier(reader)
                     .build();
@@ -208,7 +225,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withSimpleAttribute(String name, String description, Consumer<T> writer) {
-            AttributeInfo<T> info = AttributeInfo.<T>builder().withName(name)
+            Class<T> attributeType = (Class<T>) TypeResolver.resolveRawArgument(Consumer.class, writer.getClass());
+            AttributeInfo<T> info = AttributeInfo.builder(attributeType).withName(name)
                     .withDescription(description)
                     .withConsumer(writer)
                     .build();
@@ -216,7 +234,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withSimpleAttribute(String name, String description, Supplier<T> reader, Consumer<T> writer) {
-            AttributeInfo<T> info = AttributeInfo.<T>builder().withName(name)
+            Class<T> attributeType = (Class<T>) TypeResolver.resolveRawArgument(Supplier.class, reader.getClass());
+            AttributeInfo<T> info = AttributeInfo.builder(attributeType).withName(name)
                     .withDescription(description)
                     .withSupplier(reader)
                     .withConsumer(writer)
@@ -225,7 +244,8 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withSimpleAttribute(String name, String description, Supplier<T> reader, Consumer<T> writer, Descriptor descriptor) {
-            AttributeInfo<T> info = AttributeInfo.<T>builder().withName(name)
+            Class<T> attributeType = (Class<T>) TypeResolver.resolveRawArgument(Supplier.class, reader.getClass());
+            AttributeInfo<T> info = AttributeInfo.builder(attributeType).withName(name)
                     .withDescription(description)
                     .withSupplier(reader)
                     .withConsumer(writer)
@@ -235,7 +255,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withCompositeAttribute(String name, String description, Supplier<T> reader, CompositeDataWriter<T> writes) {
-            AttributeInfo<CompositeData> info = AttributeInfo.<CompositeData>builder().withName(name)
+            AttributeInfo<CompositeData> info = AttributeInfo.builder(CompositeData.class).withName(name)
                     .withDescription(description)
                     .withSupplier(() -> writes.apply(reader.get()))
                     .build();
@@ -243,7 +263,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withCompositeAttribute(String name, String description, Supplier<T> reader, CompositeDataWriter<T> writes, Descriptor descriptor) {
-            AttributeInfo<CompositeData> info = AttributeInfo.<CompositeData>builder()
+            AttributeInfo<CompositeData> info = AttributeInfo.builder(CompositeData.class)
                     .withName(name)
                     .withDescription(description)
                     .withSupplier(() -> writes.apply(reader.get()))
@@ -253,7 +273,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withTabularAttribute(String name, String description, Supplier<Iterable<T>> reader, TabularDataWriter<T> writes) {
-            AttributeInfo<TabularData> info = AttributeInfo.<TabularData>builder()
+            AttributeInfo<TabularData> info = AttributeInfo.builder(TabularData.class)
                     .withName(name)
                     .withDescription(description)
                     .withSupplier(() -> writes.apply(reader.get()))
@@ -262,7 +282,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T> Builder withTabularAttribute(String name, String description, Supplier<Iterable<T>> reader, TabularDataWriter<T> writes, Descriptor descriptor) {
-            AttributeInfo<TabularData> info = AttributeInfo.<TabularData>builder()
+            AttributeInfo<TabularData> info = AttributeInfo.<TabularData>builder(TabularData.class)
                     .withName(name)
                     .withDescription(description)
                     .withSupplier(() -> writes.apply(reader.get()))
@@ -297,7 +317,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T, R> Builder withOperation(String name, String description, Function<T, R> f, ParameterInfo parameterInfo) {
-            OperationInfo info =OperationInfo.builder()
+            OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(description)
                     .withMethod(f, parameterInfo)
@@ -307,7 +327,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public <T, U, R> Builder withOperation(String name, String description, BiFunction<T, U, R> f, String paramName1, String paramName2) {
-            OperationInfo info =OperationInfo.builder()
+            OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(description)
                     .withMethod(f, paramName1, paramName2)
@@ -329,18 +349,19 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         /**
          * Calls a method on the object with the given parameters through reflection.
          *
-         * @param name the name of the method to call (i.e. on user.getName, this is "getName")
-         * @param description the description, i.e. "Gets the user's name"
-         * @param object the object, i.e. the user
+         * @param name           the name of the operation
+         * @param description    the description, i.e. "Gets the user's name"
+         * @param object         the object, i.e. the user
+         * @param methodName     the method name itself, for reflection purposes.
          * @param parameterInfos the method signature, if any (i.e. getLogger(String loggerName) would have a single String parameter info)
-         * @param <T> the type of object
+         * @param <T>            the type of object
          * @return the dynamic bean builder.
          */
-        public <T> Builder withOperation(String name, String description, T object, ParameterInfo... parameterInfos) {
+        public <T> Builder withOperation(String name, String description, T object, String methodName, ParameterInfo... parameterInfos) {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(description)
-                    .withMethod(object, parameterInfos)
+                    .withReflection(object, methodName, parameterInfos)
                     .build();
 
             return withOperation(info);
@@ -370,12 +391,10 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             return this;
         }
 
-
         public Builder withImmutableInfo(boolean isImmmutable) {
             descriptorBuilder.withImmutableInfo(isImmmutable);
             return this;
         }
-
 
         public Builder withDescriptor(Descriptor descriptor) {
             descriptorBuilder.withDescriptor(descriptor);
@@ -383,7 +402,6 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
         }
 
         public DynamicBean build() {
-
             // https://docs.oracle.com/javase/8/docs/api/javax/management/MBeanInfo.html
             MBeanInfo info = new MBeanInfo(className, description,
                     attributeInfos.getMBeanAttributeInfos(),

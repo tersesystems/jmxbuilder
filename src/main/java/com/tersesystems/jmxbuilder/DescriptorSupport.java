@@ -33,7 +33,11 @@ public class DescriptorSupport {
     }
 
     public static class Builder {
-        private final javax.management.modelmbean.DescriptorSupport descriptor = new javax.management.modelmbean.DescriptorSupport();
+        private final javax.management.modelmbean.DescriptorSupport descriptor;
+
+        Builder() {
+            descriptor = new javax.management.modelmbean.DescriptorSupport();
+        }
 
         public Builder withDefaultValue(Object defaultValue) {
             descriptor.setField(JMX.DEFAULT_VALUE_FIELD, defaultValue);
@@ -118,6 +122,11 @@ public class DescriptorSupport {
 
         public Builder withDescriptionResource(String descriptionResource) {
             descriptor.setField("descriptionResource", descriptionResource);
+            return this;
+        }
+
+        public Builder withField(String fieldName, Object fieldValue) {
+            descriptor.setField(fieldName, fieldValue);
             return this;
         }
 

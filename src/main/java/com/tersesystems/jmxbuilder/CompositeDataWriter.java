@@ -70,7 +70,7 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
         }
     }
 
-    public static <I> Builder<I> builder() {
+    public static <I> Builder<I> builder(Class<I> clazz) {
         return new Builder<>();
     }
 

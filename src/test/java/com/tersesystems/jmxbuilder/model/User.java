@@ -24,7 +24,7 @@ public class User {
     private Integer age;
     private final Address address;
 
-    public User(String name, Integer age, Address address) {
+    public User(String name, int age, Address address) {
         this.name = name;
         this.age = age;
         this.address = address;
@@ -38,11 +38,11 @@ public class User {
         this.name = name;
     }
 
-    public Integer getAge() {
+    public int getAge() {
         return age;
     }
 
-    public void setAge(Integer age) {
+    public void setAge(int age) {
         this.age = age;
     }
 
