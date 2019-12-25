@@ -24,11 +24,11 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.Notification;
 import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -152,69 +152,90 @@ public class OperationInfo {
         }
 
         // no args, returns void
-        public Builder withMethod(Runnable runnable) {
+        public Builder withRunnable(Runnable runnable) {
             ParameterInfo<?>[] signature = new ParameterInfo[0];
-            this.returnType = "java.lang.Void";
+            this.returnType = "void";
             this.signature = signature;
             this.invoker = MethodInvoker.build(runnable);
             return this;
         }
 
-        public <T> Builder withMethod(Callable<T> callable, String paramName) {
+        public <R> Builder withCallable(Callable<R> callable) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Callable.class, callable.getClass());
-            ParameterInfo<T> param = ParameterInfo.builder().withClassType((Class<T>) types[0]).withName(paramName).build();
-            return withMethod(callable, param);
+            Class<R> returnClass = (Class<R>) types[types.length - 1];
+            return withCallable(returnClass, callable);
         }
 
-        public <T> Builder withMethod(Callable<T> callable, ParameterInfo<T> parameter) {
-            Class<?>[] types = TypeResolver.resolveRawArguments(Callable.class, callable.getClass());
-            this.signature = new ParameterInfo[]{parameter};
-            this.returnType = types[types.length - 1].getName();
+        public <R> Builder withCallable(Class<R> returnClass, Callable<R> callable) {
+            this.signature = new ParameterInfo[]{};
+            this.returnType = returnClass.getName();
             this.invoker = MethodInvoker.build(callable);
             return this;
         }
 
-        // no args, returns R
-        public <T> Builder withMethod(Supplier<T> supplier) {
+        public <R> Builder withSupplier(Supplier<R> supplier) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Supplier.class, supplier.getClass());
+            Class<R> returnClass = (Class<R>) types[0];
+            return withSupplier(returnClass, supplier);
+        }
 
-            this.returnType = types[0].getName();
+        public <R> Builder withSupplier(Class<R> returnClass, Supplier<R> supplier) {
+            this.returnType = returnClass.getName();
             this.signature = new ParameterInfo[0];
             this.invoker = MethodInvoker.build(supplier);
             return this;
         }
+        
+        public <V> Builder withConsumer(Consumer<V> consumer, String paramName) {
+            Class<?>[] types = TypeResolver.resolveRawArguments(Consumer.class, consumer.getClass());
+            ParameterInfo<V> parameterInfo = (ParameterInfo<V>) ParameterInfo.builder().withClassType(types[types.length - 1]).withName(paramName).build();
+            return withConsumer(consumer, parameterInfo);
+        }
 
-        public <T, R> Builder withMethod(Function<T, R> function, String paramName) {
-            Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, function.getClass());
-            this.signature = new ParameterInfo[]{ParameterInfo.builder().withClassType((Class<T>) types[0]).withName(paramName).build()};
-            this.returnType = types[types.length - 1].getName();
-            this.invoker = MethodInvoker.build(function);
+        public <V> Builder withConsumer(Consumer<V> consumer, ParameterInfo<V> paramInfo) {
+            this.returnType = "void";
+            this.signature = new ParameterInfo[] {paramInfo};
+            this.invoker = MethodInvoker.build(consumer);
             return this;
         }
 
-        public <T, R> Builder withMethod(Function<T, R> function, ParameterInfo<T> signature) {
+        public <T, R> Builder withFunction(Function<T, R> function, String paramName) {
             Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, function.getClass());
+            Class<R> returnClass = (Class<R>) types[types.length - 1];
+            ParameterInfo<T> parameterInfo = (ParameterInfo<T>) ParameterInfo.builder().withClassType(types[0]).withName(paramName).build();
+            return withFunction(returnClass, function, parameterInfo);
+        }
+
+        public <T, R> Builder withFunction(Function<T, R> function, ParameterInfo<T> signature) {
+            Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, function.getClass());
+            Class<R> returnClass = (Class<R>) types[types.length - 1];
+            return withFunction(returnClass, function, signature);
+        }
+
+        public <T, R> Builder withFunction(Class<R> returnClass, Function<T, R> function, ParameterInfo<T> signature) {
             this.signature = new ParameterInfo[]{signature};
-            this.returnType = types[types.length - 1].getName();
+            this.returnType = returnClass.getName();
             this.invoker = MethodInvoker.build(function);
             return this;
         }
 
-        public <T, U, R> Builder withMethod(BiFunction<T, U, R> biFunction, String arg1Name, String arg2Name) {
+        public <T, U, R> Builder withBiFunction(BiFunction<T, U, R> biFunction, String arg1Name, String arg2Name) {
             Class<?>[] types = TypeResolver.resolveRawArguments(BiFunction.class, biFunction.getClass());
-            this.signature = new ParameterInfo[]{
-                ParameterInfo.builder().withClassType(types[0]).withName(arg1Name).build(),
-                ParameterInfo.builder().withClassType(types[1]).withName(arg2Name).build()
-            };
-            this.returnType = types[types.length - 1].getName();
-            this.invoker = MethodInvoker.build(biFunction);
-            return this;
+            ParameterInfo<T> param1 = (ParameterInfo<T>) ParameterInfo.builder().withClassType(types[0]).withName(arg1Name).build();
+            ParameterInfo<U> param2 = (ParameterInfo<U>) ParameterInfo.builder().withClassType(types[1]).withName(arg2Name).build();
+            Class<R> returnClass = (Class<R>) types[types.length - 1];
+            return withBiFunction(returnClass, biFunction, param1, param2);
         }
 
-        public <T, U, R> Builder withMethod(BiFunction<T, U, R> biFunction, ParameterInfo<?>[] signature) {
+        public <T, U, R> Builder withBiFunction(BiFunction<T, U, R> biFunction, ParameterInfo<T> param1, ParameterInfo<U> param2) {
             Class<?>[] types = TypeResolver.resolveRawArguments(BiFunction.class, biFunction.getClass());
-            String returnType = types[types.length - 1].getName();
-            this.signature = signature;
+            Class<R> returnClass = (Class<R>) types[types.length - 1];
+            return withBiFunction(returnClass, biFunction, param1, param2);
+        }
+
+        public <T, U, R> Builder withBiFunction(Class<R> returnClass, BiFunction<T, U, R> biFunction, ParameterInfo<T> param1, ParameterInfo<U> param2) {
+            String returnType = returnClass.getName();
+            this.signature = new ParameterInfo[]{ param1, param2 };
             this.returnType = returnType;
             this.invoker = MethodInvoker.build(biFunction);
             return this;
@@ -273,7 +294,6 @@ public class OperationInfo {
 
             return new OperationInfo(name, signature, returnType, invoker, description, impact, descriptor, notifier);
         }
-
     }
 
 }
