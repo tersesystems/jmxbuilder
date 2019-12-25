@@ -10,7 +10,7 @@ output = [
 	].join('\n')
 -->
 [![Bintray](https://img.shields.io/badge/bintray-tersesystems%3Ajmxbuilder-blue.svg)](https://bintray.com/tersesystems/maven/jmxbuilder/view)
-[![Latest version](https://img.shields.io/badge/latest-0.0.1-blue.svg)](https://github.com/tersesystems/jmxbuilder/releases/latest)
+[![Latest version](https://img.shields.io/badge/latest-0.0.2-blue.svg)](https://github.com/tersesystems/jmxbuilder/releases/latest)
 [![License Apache2](https://img.shields.io/badge/license-Apache2-blue.svg)](https://www.tldrlegal.com/l/apache2)
 
 [![Travis CI](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)

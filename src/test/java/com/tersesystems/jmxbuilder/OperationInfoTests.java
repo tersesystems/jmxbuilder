@@ -40,7 +40,7 @@ public class OperationInfoTests {
         OperationInfo info = OperationInfo.builder()
                 .withName("dump")
                 .withDescription("dumps the internal state")
-                .withMethod(service::dump)
+                .withSupplier(service::dump)
                 .build();
 
         DescriptorSupport descriptorSupport = new DescriptorSupport();

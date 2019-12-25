@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -68,6 +69,16 @@ public class MethodInvoker {
             throw new RuntimeException(e);
         }
     }
+
+
+    public static <T> MethodInvoker build(Consumer<T> consumer) {
+        try {
+            return build(consumer, Consumer.class.getMethod("accept"));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     public static <T, R> MethodInvoker build(Function<T, R> function) {
         return build(Function.class, function);

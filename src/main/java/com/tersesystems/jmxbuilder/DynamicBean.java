@@ -383,42 +383,34 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(runnable)
+                    .withRunnable(runnable)
                     .build();
 
             return withOperation(info);
         }
 
         /**
-         * Creates an operation from a callable.
+         * Creates an operation from a consumer.
          *
          * @param name     the name of the operation.
-         * @param callable the runnable instance that will be run.
+         * @param consumer the consumer.
          * @param paramName the parameter name.
          * @return builder.
          */
-        public <V> Builder withOperation(String name, Callable<V> callable, String paramName) {
+        public <V> Builder withOperation(String name, Consumer<V> consumer, String paramName) {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(callable, paramName)
+                    .withConsumer(consumer, paramName)
                     .build();
             return withOperation(info);
         }
 
-        /**
-         * Creates an operation from a callable.
-         *
-         * @param name     the name of the operation.
-         * @param callable the runnable instance that will be run.
-         * @param paramInfo the parameter info.
-         * @return builder.
-         */
-        public <V> Builder withOperation(String name, Callable<V> callable, ParameterInfo<V> paramInfo) {
+        public <V> Builder withOperation(String name, Consumer<V> consumer, ParameterInfo<V> paramInfo) {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(callable, paramInfo)
+                    .withConsumer(consumer, paramInfo)
                     .build();
             return withOperation(info);
         }
@@ -437,7 +429,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(f, paramName)
+                    .withFunction(f, paramName)
                     .build();
 
             return withOperation(info);
@@ -457,7 +449,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(f, parameterInfo)
+                    .withFunction(f, parameterInfo)
                     .build();
 
             return withOperation(info);
@@ -478,7 +470,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(f, paramName1, paramName2)
+                    .withBiFunction(f, paramName1, paramName2)
                     .build();
 
             return withOperation(info);
@@ -500,7 +492,7 @@ public class DynamicBean implements DynamicMBean, NotificationEmitter {
             OperationInfo info = OperationInfo.builder()
                     .withName(name)
                     .withDescription(name)
-                    .withMethod(f, new ParameterInfo[]{param1, param2})
+                    .withBiFunction(f, param1, param2)
                     .build();
 
             return withOperation(info);
