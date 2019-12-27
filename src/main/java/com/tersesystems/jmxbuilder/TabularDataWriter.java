@@ -59,7 +59,7 @@ public class TabularDataWriter<I> implements Function<Iterable<I>, TabularData> 
     }
 
     public static <I> Builder<I> builder(Class<I> clazz) {
-        return new Builder<I>();
+        return new Builder<>();
     }
 
     public static class Builder<I> {
@@ -68,27 +68,7 @@ public class TabularDataWriter<I> implements Function<Iterable<I>, TabularData> 
         private String[] indexNames;
         private CompositeDataWriter<I> compositeDataWriter;
 
-        public Builder() {
-            this(null, null, null, null);
-        }
-
-        public Builder(String typeName, String typeDescription) {
-            this(typeName, typeDescription, null, null);
-        }
-
-        public Builder(String typeName, String typeDescription, String[] indexNames) {
-            this(typeName, typeDescription, indexNames, null);
-        }
-
-        public Builder(String typeName, String typeDescription, List<String> indexNames) {
-            this(typeName, typeDescription, indexNames.toArray(new String[0]), null);
-        }
-
-        public Builder(String typeName, String typeDescription, String[] indexNames, CompositeDataWriter<I> compositeDataWriter) {
-            this.typeName = typeName;
-            this.typeDescription = typeDescription;
-            this.indexNames = indexNames;
-            this.compositeDataWriter = compositeDataWriter;
+        Builder() {
         }
 
         public Builder<I> withTypeName(String name) {
@@ -122,7 +102,7 @@ public class TabularDataWriter<I> implements Function<Iterable<I>, TabularData> 
         }
 
         public TabularDataWriter<I> build() {
-            return new TabularDataWriter<>(typeName, typeDescription, indexNames, compositeDataWriter);
+            return new TabularDataWriter<I>(typeName, typeDescription, indexNames, compositeDataWriter);
         }
 
     }

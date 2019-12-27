@@ -21,7 +21,9 @@ import net.jodah.typetools.TypeResolver;
 
 import javax.management.openmbean.*;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -37,7 +39,7 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
     private final List<Function<I, ?>> attributeMappers;
     private final CompositeType compositeType;
 
-    public CompositeDataWriter(String typeDescription, String typeName, List<String> attributeNames, List<String> attributeDescriptions, List<OpenType<?>> attributeTypes, List<Function<I, ?>> attributeMappers) {
+    public CompositeDataWriter(String typeName, String typeDescription, List<String> attributeNames, List<String> attributeDescriptions, List<OpenType<?>> attributeTypes, List<Function<I, ?>> attributeMappers) {
         List<String> names = requireNonNull(attributeNames, "Null attributeNames");
         String name = requireNonNull(typeName, "Null typeName");
         String description = requireNonNull(typeDescription, "Null typeDescription");
@@ -97,54 +99,55 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
             return this;
         }
 
-        // Ideally we want to say that for every T there is a SimpleType<T>
-        public <T> Builder<I> withSimpleAttribute(String name, String description, Function<I, T> mapper) {
-            try {
-                attributeNames.add(name);
-                attributeDescriptions.add(description);
-
-                // Resolves T
-                Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, mapper.getClass());
-                Class<?> attributeType = types[1];
-
-                attributeTypes.add(toOpenType(attributeType));
-                attributeMappers.add(mapper);
-                return this;
-            } catch (OpenDataException e) {
-                throw new RuntimeException(e);
+        public <T> Builder<I> withSimpleAttribute(String name, Function<I, T> mapper) {
+            Class<?>[] types = TypeResolver.resolveRawArguments(Function.class, mapper.getClass());
+            Class<T> attributeType = (Class<T>) types[1];
+            if (TypeResolver.Unknown.class.equals(attributeType)) {
+                throw new IllegalStateException("Cannot infer type from class " + Arrays.toString(types));
             }
+            return withSimpleAttribute(attributeType, name, mapper);
         }
 
-        public Builder<I> withCompositeAttribute(String name, String description, Function<I, CompositeData> mapper, CompositeType attributeType) {
+        public <T> Builder<I> withSimpleAttribute(Class<? extends T> attributeType, String name, Function<I, T> mapper) {
             attributeNames.add(name);
-            attributeDescriptions.add(description);
+            attributeDescriptions.add(name);
+            attributeTypes.add(openTypeMapper.fromClass(attributeType));
+            attributeMappers.add(mapper);
+            return this;
+        }
+
+        public Builder<I> withCompositeAttribute(CompositeType attributeType, String name, Function<I, CompositeData> mapper) {
+            attributeNames.add(name);
+            attributeDescriptions.add(name);
             attributeTypes.add(attributeType);
             attributeMappers.add(mapper);
             return this;
         }
 
-        public <T> Builder<I> withCompositeAttribute(String name, String description, Function<I, T> mapper, CompositeDataWriter<T> attributeCompositeBuilder) {
-            return withCompositeAttribute(name, description, mapper.andThen(attributeCompositeBuilder), attributeCompositeBuilder.getCompositeType());
+        public <T> Builder<I> withCompositeAttribute(String name, Function<I, T> mapper, CompositeDataWriter<T> attributeCompositeBuilder) {
+            return withCompositeAttribute(
+                    attributeCompositeBuilder.getCompositeType(),
+                    name,
+                    mapper.andThen(attributeCompositeBuilder)
+            );
         }
 
-        public Builder<I> withTabularAttribute(String name, String description, Function<I, TabularData> mapper, TabularType attributeType) {
+        public Builder<I> withTabularAttribute(TabularType attributeType, String name, Function<I, TabularData> mapper) {
             attributeNames.add(name);
-            attributeDescriptions.add(description);
+            attributeDescriptions.add(name);
             attributeTypes.add(attributeType);
             attributeMappers.add(mapper);
             return this;
         }
 
-        public <R> Builder<I> withTabularAttribute(String name, String description, Function<I, Iterable<R>> mapper, TabularDataWriter<R> attributeTabularBuilder) {
-            return withTabularAttribute(name, description, mapper.andThen(attributeTabularBuilder), attributeTabularBuilder.getTabularType());
-        }
-
-        private OpenType<?> toOpenType(Type type) throws OpenDataException {
-            return openTypeMapper.fromType(type);
+        public <R> Builder<I> withTabularAttribute(String name, Function<I, Iterable<R>> mapper, TabularDataWriter<R> attributeTabularBuilder) {
+            return withTabularAttribute(attributeTabularBuilder.getTabularType(),
+                    name,
+                    mapper.andThen(attributeTabularBuilder));
         }
 
         public CompositeDataWriter<I> build() {
-            return new CompositeDataWriter<>(typeDescription, typeName, attributeNames, attributeDescriptions, attributeTypes, attributeMappers);
+            return new CompositeDataWriter<>(typeName, typeDescription, attributeNames, attributeDescriptions, attributeTypes, attributeMappers);
         }
 
     }

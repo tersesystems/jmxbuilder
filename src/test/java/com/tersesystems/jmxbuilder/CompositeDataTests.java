@@ -1,14 +1,14 @@
 /**
  * SPDX-License-Identifier: Apache-2.0
- *
+ * <p>
  * Copyright 2019 Terse Systems <will@tersesystems.com>
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,9 +44,10 @@ public class CompositeDataTests {
         final CompositeDataWriter<Address> addressBuilder = CompositeDataWriter.builder(Address.class)
                 .withTypeName("address")
                 .withTypeDescription("Address")
-                .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
-                .withSimpleAttribute("city", "City", Address::getCity)
-                .withSimpleAttribute("state", "State", Address::getState)
+                .withSimpleAttribute(java.util.Date.class, "date", e -> new java.util.Date())
+                .withSimpleAttribute(String.class, "street1", Address::getStreet1)
+                .withSimpleAttribute(String.class, "city", Address::getCity)
+                .withSimpleAttribute(String.class, "state", Address::getState)
                 .build();
 
         AttributeInfo<CompositeData> info = AttributeInfo.builder(CompositeData.class).withName("address")
@@ -86,9 +87,9 @@ public class CompositeDataTests {
         final CompositeDataWriter<Address> addressBuilder = CompositeDataWriter.builder(Address.class)
                 .withTypeName("address")
                 .withTypeDescription("Address")
-                .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
-                .withSimpleAttribute("city", "City", Address::getCity)
-                .withSimpleAttribute("state", "State", Address::getState)
+                .withSimpleAttribute(String.class, "street1", Address::getStreet1)
+                .withSimpleAttribute(String.class, "city", Address::getCity)
+                .withSimpleAttribute(String.class, "state", Address::getState)
                 .build();
 
         Descriptor addressDescriptor = DescriptorSupport.builder().withSince("1.0").withLocale("en-US").build();
@@ -111,15 +112,15 @@ public class CompositeDataTests {
     public void testDynamicBeanWithTabularAttribute() {
         CompositeDataWriter<Address> addressWriter = CompositeDataWriter.builder(Address.class)
                 .withTypeName("address")
-                .withTypeDescription( "Address")
-                .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
-                .withSimpleAttribute("city", "City", Address::getCity)
-                .withSimpleAttribute("state", "State", Address::getState)
+                .withTypeDescription("Address")
+                .withSimpleAttribute(String.class, "street1", Address::getStreet1)
+                .withSimpleAttribute(String.class, "city", Address::getCity)
+                .withSimpleAttribute(String.class, "state", Address::getState)
                 .build();
 
         final TabularDataWriter<Address> addressesWriter = TabularDataWriter.builder(Address.class)
                 .withTypeName("addresses")
-                .withTypeDescription( "Addresses")
+                .withTypeDescription("Addresses")
                 .withIndexName("street1")
                 .withCompositeDataWriter(addressWriter)
                 .build();
