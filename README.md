@@ -3,7 +3,7 @@
 <!---freshmark shields
 output = [
 	link(shield('Bintray', 'bintray', 'tersesystems:jmxbuilder', 'blue'), 'https://bintray.com/tersesystems/maven/jmxbuilder/view'),
-	link(shield('Latest version', 'latest', '{{version}}', 'blue'), 'https://github.com/tersesystems/jmxbuilder/releases/latest'),
+	link(shield('Latest version', 'latest', '{{previousVersion}}', 'blue'), 'https://github.com/tersesystems/jmxbuilder/releases/latest'),
 	link(shield('License Apache2', 'license', 'Apache2', 'blue'), 'https://www.tldrlegal.com/l/apache2'),
 	'',
 	link(image('Travis CI', 'https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master'), 'https://travis-ci.org/tersesystems/jmxbuilder')
