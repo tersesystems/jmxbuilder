@@ -3,14 +3,14 @@
 <!---freshmark shields
 output = [
 	link(shield('Bintray', 'bintray', 'tersesystems:jmxbuilder', 'blue'), 'https://bintray.com/tersesystems/maven/jmxbuilder/view'),
-	link(shield('Latest version', 'latest', '{{previousVersion}}', 'blue'), 'https://github.com/tersesystems/jmxbuilder/releases/latest'),
+	link(shield('Latest version', 'latest', '{{version}}', 'blue'), 'https://github.com/tersesystems/jmxbuilder/releases/latest'),
 	link(shield('License Apache2', 'license', 'Apache2', 'blue'), 'https://www.tldrlegal.com/l/apache2'),
 	'',
 	link(image('Travis CI', 'https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master'), 'https://travis-ci.org/tersesystems/jmxbuilder')
 	].join('\n')
 -->
 [![Bintray](https://img.shields.io/badge/bintray-tersesystems%3Ajmxbuilder-blue.svg)](https://bintray.com/tersesystems/maven/jmxbuilder/view)
-[![Latest version](https://img.shields.io/badge/latest-0.0.2-blue.svg)](https://github.com/tersesystems/jmxbuilder/releases/latest)
+[![Latest version](https://img.shields.io/badge/latest-0.0.3-blue.svg)](https://github.com/tersesystems/jmxbuilder/releases/latest)
 [![License Apache2](https://img.shields.io/badge/license-Apache2-blue.svg)](https://www.tldrlegal.com/l/apache2)
 
 [![Travis CI](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)
