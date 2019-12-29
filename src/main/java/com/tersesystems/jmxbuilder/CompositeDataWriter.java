@@ -39,7 +39,12 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
     private final List<Function<I, ?>> attributeMappers;
     private final CompositeType compositeType;
 
-    public CompositeDataWriter(String typeName, String typeDescription, List<String> attributeNames, List<String> attributeDescriptions, List<OpenType<?>> attributeTypes, List<Function<I, ?>> attributeMappers) {
+    public CompositeDataWriter(String typeName,
+                               String typeDescription,
+                               List<String> attributeNames,
+                               List<String> attributeDescriptions,
+                               List<OpenType<?>> attributeTypes,
+                               List<Function<I, ?>> attributeMappers) {
         List<String> names = requireNonNull(attributeNames, "Null attributeNames");
         String name = requireNonNull(typeName, "Null typeName");
         String description = requireNonNull(typeDescription, "Null typeDescription");
@@ -49,7 +54,8 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
         this.attributeNames = names.toArray(new String[0]);
         this.attributeMappers = requireNonNull(attributeMappers);
         try {
-            this.compositeType = new CompositeType(name, description,
+            this.compositeType = new CompositeType(name,
+                    description,
                     this.attributeNames,
                     descriptions.toArray(new String[0]),
                     types.toArray(new OpenType<?>[0]));
@@ -116,6 +122,22 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
             return this;
         }
 
+        public <T> Builder<I> withSimpleAttribute(Class<? extends T> attributeType, String name, String description, Function<I, T> mapper) {
+            attributeNames.add(name);
+            attributeDescriptions.add(description);
+            attributeTypes.add(openTypeMapper.fromClass(attributeType));
+            attributeMappers.add(mapper);
+            return this;
+        }
+
+        public <T> Builder<I> withCompositeAttribute(String name, Function<I, T> mapper, CompositeDataWriter<T> writer) {
+            return withCompositeAttribute(
+                    writer.getCompositeType(),
+                    name,
+                    mapper.andThen(writer)
+            );
+        }
+
         public Builder<I> withCompositeAttribute(CompositeType attributeType, String name, Function<I, CompositeData> mapper) {
             attributeNames.add(name);
             attributeDescriptions.add(name);
@@ -124,26 +146,30 @@ public class CompositeDataWriter<I> implements Function<I, CompositeData> {
             return this;
         }
 
-        public <T> Builder<I> withCompositeAttribute(String name, Function<I, T> mapper, CompositeDataWriter<T> attributeCompositeBuilder) {
-            return withCompositeAttribute(
-                    attributeCompositeBuilder.getCompositeType(),
-                    name,
-                    mapper.andThen(attributeCompositeBuilder)
-            );
-        }
-
-        public Builder<I> withTabularAttribute(TabularType attributeType, String name, Function<I, TabularData> mapper) {
+        public Builder<I> withCompositeAttribute(CompositeType attributeType, String name, String description, Function<I, CompositeData> mapper) {
             attributeNames.add(name);
-            attributeDescriptions.add(name);
+            attributeDescriptions.add(description);
             attributeTypes.add(attributeType);
             attributeMappers.add(mapper);
             return this;
         }
 
-        public <R> Builder<I> withTabularAttribute(String name, Function<I, Iterable<R>> mapper, TabularDataWriter<R> attributeTabularBuilder) {
-            return withTabularAttribute(attributeTabularBuilder.getTabularType(),
+        public <R> Builder<I> withTabularAttribute(String name, Function<I, Iterable<R>> mapper, TabularDataWriter<R> tablarWriter) {
+            return withTabularAttribute(tablarWriter.getTabularType(),
                     name,
-                    mapper.andThen(attributeTabularBuilder));
+                    mapper.andThen(tablarWriter));
+        }
+
+        public Builder<I> withTabularAttribute(TabularType attributeType, String name, Function<I, TabularData> mapper) {
+            return withTabularAttribute(attributeType, name, name, mapper);
+        }
+
+        public Builder<I> withTabularAttribute(TabularType attributeType, String name, String description, Function<I, TabularData> mapper) {
+            attributeNames.add(name);
+            attributeDescriptions.add(description);
+            attributeTypes.add(attributeType);
+            attributeMappers.add(mapper);
+            return this;
         }
 
         public CompositeDataWriter<I> build() {
