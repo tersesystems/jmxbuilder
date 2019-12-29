@@ -49,6 +49,12 @@ public class TabularDataWriter<I> implements Function<Iterable<I>, TabularData> 
        return tabularType;
     }
 
+    /**
+     * Creates a tabular data from items.
+     *
+     * @param items the input.
+     * @return the tabular data.
+     */
     @Override
     public TabularData apply(Iterable<I> items) {
         final TabularDataSupport tabularDataSupport = new TabularDataSupport(getTabularType());
@@ -71,36 +77,77 @@ public class TabularDataWriter<I> implements Function<Iterable<I>, TabularData> 
         Builder() {
         }
 
+        /**
+         * Sets the name on the tabular type.
+         *
+         * @param name the name
+         * @return the builder.
+         */
         public Builder<I> withTypeName(String name) {
             this.typeName = name;
             return this;
         }
 
+        /**
+         * Sets the description on the tabular type..
+         *
+         * @param description the description
+         * @return the builder.
+         */
         public Builder<I> withTypeDescription(String description) {
             this.typeDescription = description;
             return this;
         }
 
+        /**
+         * Sets the index name on the tabular type.  This replaces any previous values.
+         *
+         * @param indexName the index name.
+         * @return the builder.
+         */
         public Builder<I> withIndexName(String indexName) {
             this.indexNames = new String[] { indexName };
             return this;
         }
 
+        /**
+         * Sets index names on the tabular type.  This replaces any previous values.
+         *
+         * @param indexNames the index names.
+         * @return the builder.
+         */
         public Builder<I> withIndexNames(String[] indexNames) {
             this.indexNames = indexNames;
             return this;
         }
 
+        /**
+         * Sets index names on the tabular type.  This replaces any previous values.
+         *
+         * @param indexNames the index names.
+         * @return the builder.
+         */
         public Builder<I> withIndexNames(List<String> indexNames) {
             this.indexNames = indexNames.toArray(new String[0]);
             return this;
         }
 
+        /**
+         * Sets the composite writer for the tabular type.
+         *
+         * @param compositeDataWriter the writer.
+         * @return the builder.
+         */
         public Builder<I> withCompositeDataWriter(CompositeDataWriter<I> compositeDataWriter) {
             this.compositeDataWriter = compositeDataWriter;
             return this;
         }
 
+        /**
+         * Creates the writer.
+         *
+         * @return the tabular data writer.
+         */
         public TabularDataWriter<I> build() {
             return new TabularDataWriter<I>(typeName, typeDescription, indexNames, compositeDataWriter);
         }

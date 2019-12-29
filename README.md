@@ -92,42 +92,26 @@ You can also specify composite data more generally and build up a mapping of dat
 ```java
 public class CompositeExample {
 
-    static class CompositeItemBean<T> {
-        private final CompositeDataWriter<T> compositeBuilder;
-        private final Supplier<T> itemSupplier;
-
-        public CompositeItemBean(CompositeDataWriter<T> compositeBuilder, Supplier<T> itemSupplier) {
-            this.itemSupplier = itemSupplier;
-            this.compositeBuilder = compositeBuilder;
-        }
-
-        public CompositeData getItem() {
-            return compositeBuilder.apply(itemSupplier.get());
-        }
-    }
-
-    static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.<Address>builder()
+    static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.builder(Address.class)
             .withTypeName("address")
             .withTypeDescription("Address")
-            .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
-            .withSimpleAttribute("city", "City", Address::getCity)
-            .withSimpleAttribute("state", "State", Address::getState)
+            .withSimpleAttribute(String.class, "street1", "Street 1", Address::getStreet1)
+            .withSimpleAttribute("city", Address::getCity)
+            .withSimpleAttribute("state", Address::getState)
             .build();
 
-    static final CompositeDataWriter<User> userWriter = CompositeDataWriter.<User>builder()
-        .withTypeName("user")
-        .withTypeDescription("User")
-        .withSimpleAttribute("name", "Name", User::getName)
-        .withSimpleAttribute("age", "Age", User::getAge)
-        .withCompositeAttribute("address", "Address", User::getAddress, addressWriter).build();
+    static final CompositeDataWriter<User> userWriter = CompositeDataWriter.builder(User.class)
+            .withTypeName("user")
+            .withTypeDescription("User")
+            .withSimpleAttribute("name", User::getName)
+            .withSimpleAttribute("age", User::getAge)
+            .withCompositeAttribute("address", user -> user.getAddress(), addressWriter).build();
 
     public static void compositeBean() throws Exception {
         final Address address = new Address("street1", "city", "state");
         final User user = new User("name", 12, address);
-        final CompositeItemBean<User> compositeItemBean = new CompositeItemBean<>(userWriter, () -> user);
-
         final DynamicMBean userBean = DynamicBean.builder()
-                .withSimpleAttribute("User", compositeItemBean::getItem)
+                .withCompositeAttribute("User", () -> user, userWriter)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=CompositeBean");
@@ -136,6 +120,7 @@ public class CompositeExample {
         final CompositeData userItem = (CompositeData) mBeanServer.getAttribute(objectName, "User");
         printUser(userItem);
     }
+
 }
 ```
 
@@ -147,27 +132,21 @@ We can also do lists of users, using the same writers we defined earlier and map
 
 ```java
 public class TabularExample {
-    static class TabularItemBean<T> {
-        private final Supplier<Iterable<T>> itemsSupplier;
-        private final TabularDataWriter<T> builder;
+    // ... composite writers as above
 
-        public TabularItemBean(TabularDataWriter<T> builder, Supplier<Iterable<T>> items) {
-            this.builder = builder;
-            this.itemsSupplier = items;
-        }
-
-        public TabularData getItem() {
-            return builder.apply(itemsSupplier.get());
-        }
-    }
+    static final TabularDataWriter<User> usersWriter = TabularDataWriter.builder(User.class)
+            .withTypeName("users")
+            .withTypeDescription("Users")
+            .withIndexName("name")
+            .withCompositeDataWriter(userWriter)
+            .build();
 
     public static void tabularBean() throws Exception {
         final Address address = new Address("street1", "city", "state");
         final List<User> usersList = Collections.singletonList(new User("name", 12, address));
 
-        TabularItemBean<User> tabularItemBean = new TabularItemBean<>(usersWriter, () -> usersList);
         final DynamicMBean usersBean = DynamicBean.builder()
-                .withSimpleAttribute("Users", tabularItemBean::getItem)
+                .withTabularAttribute("Users", () -> usersList, usersWriter)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=TabularBean");

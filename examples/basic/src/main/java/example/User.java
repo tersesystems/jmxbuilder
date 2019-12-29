@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tersesystems.jmxbuilder.model;
+package example;
 
 import static java.lang.String.format;
 

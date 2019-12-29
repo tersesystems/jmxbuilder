@@ -17,16 +17,11 @@
  */
 package example;
 
-import com.tersesystems.jmxbuilder.model.Address;
-import com.tersesystems.jmxbuilder.model.ExampleService;
-import com.tersesystems.jmxbuilder.model.User;
-
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 import java.lang.management.ManagementFactory;
 import java.util.*;
-import java.util.function.Supplier;
 
 import com.tersesystems.jmxbuilder.*;
 
@@ -36,17 +31,17 @@ public class App {
     static final CompositeDataWriter<Address> addressWriter = CompositeDataWriter.builder(Address.class)
             .withTypeName("address")
             .withTypeDescription("Address")
-            .withSimpleAttribute("street1", "Street 1", Address::getStreet1)
-            .withSimpleAttribute("city", "City", Address::getCity)
-            .withSimpleAttribute("state", "State", Address::getState)
+            .withSimpleAttribute(String.class, "street1", "Street 1", Address::getStreet1)
+            .withSimpleAttribute("city", Address::getCity)
+            .withSimpleAttribute("state", Address::getState)
             .build();
 
     static final CompositeDataWriter<User> userWriter = CompositeDataWriter.builder(User.class)
             .withTypeName("user")
             .withTypeDescription("User")
-            .withSimpleAttribute("name", "Name", User::getName)
-            .withSimpleAttribute("age", "Age", User::getAge)
-            .withCompositeAttribute("address", "Address", User::getAddress, addressWriter).build();
+            .withSimpleAttribute("name", User::getName)
+            .withSimpleAttribute("age", User::getAge)
+            .withCompositeAttribute("address", user -> user.getAddress(), addressWriter).build();
 
     static final TabularDataWriter<User> usersWriter = TabularDataWriter.builder(User.class)
             .withTypeName("users")
@@ -99,7 +94,7 @@ public class App {
                 )
                 .withOperation(OperationInfo.builder()
                         .withName("notificationCallback")
-                        .withMethod(() -> "this is also used as a callback")
+                        .withSupplier(() -> "this is also used as a callback")
                         .withCompletionNotification((source, returnValue) -> {
                             Notification notification = new Notification("jmx.operation.completion", source, System.currentTimeMillis());
                             notification.setUserData(returnValue);
@@ -115,10 +110,8 @@ public class App {
     public static void compositeBean() throws Exception {
         final Address address = new Address("street1", "city", "state");
         final User user = new User("name", 12, address);
-        final CompositeItemBean<User> compositeItemBean = new CompositeItemBean<>(userWriter, () -> user);
-
         final DynamicMBean userBean = DynamicBean.builder()
-                .withSimpleAttribute("User", compositeItemBean::getItem)
+                .withCompositeAttribute("User", () -> user, userWriter)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=CompositeBean");
@@ -132,9 +125,8 @@ public class App {
         final Address address = new Address("street1", "city", "state");
         final List<User> usersList = Collections.singletonList(new User("name", 12, address));
 
-        TabularItemBean<User> tabularItemBean = new TabularItemBean<>(usersWriter, () -> usersList);
         final DynamicMBean usersBean = DynamicBean.builder()
-                .withSimpleAttribute("Users", tabularItemBean::getItem)
+                .withTabularAttribute("Users", () -> usersList, usersWriter)
                 .build();
 
         ObjectName objectName = new ObjectName("com.tersesystems:type=DynamicBean,name=TabularBean");
@@ -170,32 +162,5 @@ public class App {
         }
     }
 
-    static class TabularItemBean<T> {
-        private final Supplier<Iterable<T>> itemsSupplier;
-        private final TabularDataWriter<T> builder;
-
-        public TabularItemBean(TabularDataWriter<T> builder, Supplier<Iterable<T>> items) {
-            this.builder = builder;
-            this.itemsSupplier = items;
-        }
-
-        public TabularData getItem() {
-            return builder.apply(itemsSupplier.get());
-        }
-    }
-
-    static class CompositeItemBean<T> {
-        private final CompositeDataWriter<T> compositeBuilder;
-        private final Supplier<T> itemSupplier;
-
-        public CompositeItemBean(CompositeDataWriter<T> compositeBuilder, Supplier<T> itemSupplier) {
-            this.itemSupplier = itemSupplier;
-            this.compositeBuilder = compositeBuilder;
-        }
-
-        public CompositeData getItem() {
-            return compositeBuilder.apply(itemSupplier.get());
-        }
-    }
 }
 
