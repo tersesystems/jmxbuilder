@@ -51,7 +51,8 @@ public class OpenTypeMapper {
     }
 
     public <T> OpenType<T> fromClass(Class<T> clazz) {
-        return fromType(TypeResolver.reify(clazz));
+        Type reifiedType = TypeResolver.reify(clazz);
+        return fromType(reifiedType);
     }
 
     @SuppressWarnings("unchecked")

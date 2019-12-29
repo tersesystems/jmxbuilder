@@ -1,4 +1,4 @@
-package com.tersesystems.jmxbuilder.model;
+package example;
 
 public class ExampleService {
     private boolean debug;
