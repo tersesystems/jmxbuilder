@@ -1,11 +1,26 @@
-plugins {
-    id 'java-library'
-    id "org.shipkit.java"              version "2.2.5"
-    id 'com.diffplug.gradle.spotless'  version '3.24.3'
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "org.shipkit:shipkit-auto-version:1.+"
+        classpath "org.shipkit:shipkit-changelog:1.+"
+    }
 }
 
+plugins {
+    id 'java-library'
+    id 'com.diffplug.gradle.spotless'  version '3.24.3'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+}
+
+apply plugin: 'org.shipkit.shipkit-auto-version'
+apply from: "gradle/release.gradle"
+
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 test {
