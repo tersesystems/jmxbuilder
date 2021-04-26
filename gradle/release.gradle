@@ -4,16 +4,16 @@ apply plugin: "org.shipkit.shipkit-changelog"
 
 tasks.named("generateChangelog") {
     previousRevision = project.ext.'shipkit-auto-version.previous-tag'
-    githubToken = System.getenv("GITHUB_TOKEN")
-    repository = "shipkit/shipkit-demo"
+    githubToken = System.getenv("GH_WRITE_TOKEN")
+    repository = "tersesystems/jmxbuilder"
 }
 
 apply plugin: "org.shipkit.shipkit-github-release"
 tasks.named("githubRelease") {
     dependsOn tasks.named("generateChangelog")
-    repository = "shipkit/shipkit-demo"
+    repository = "tersesystems/jmxbuilder"
     changelog = tasks.named("generateChangelog").get().outputFile
-    githubToken = System.getenv("GITHUB_TOKEN")
+    githubToken = System.getenv("GH_WRITE_TOKEN")
     newTagRevision = System.getenv("GITHUB_SHA")
 }
 
