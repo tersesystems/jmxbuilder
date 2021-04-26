@@ -28,6 +28,13 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
                         url = 'https://github.com/tersesystems/jmxbuilder/blob/master/LICENSE'
                     }
                 }
+                developers {
+                    developer {
+                        id = 'tersesystems'
+                        name = 'Terse Systems'
+                        url = 'https://github.com/tersesystems'
+                    }
+                }
                 scm {
                     url = 'https://github.com/tersesystems/jmxbuilder.git'
                 }
