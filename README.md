@@ -2,15 +2,13 @@
 
 <!---freshmark shields
 output = [
-	link(shield('Bintray', 'bintray', 'tersesystems:jmxbuilder', 'blue'), 'https://bintray.com/tersesystems/maven/jmxbuilder/view'),
-	link(shield('Latest version', 'latest', '{{previousVersion}}', 'blue'), 'https://github.com/tersesystems/jmxbuilder/releases/latest'),
+	link(shield('Maven central', 'mavencentral', '{{group}}:{{artifactIdMaven}}', 'blue'), 'https://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22{{group}}%22%20AND%20a%3A%22{{artifactIdMaven}}%22'),
 	link(shield('License Apache2', 'license', 'Apache2', 'blue'), 'https://www.tldrlegal.com/l/apache2'),
 	'',
 	link(image('Travis CI', 'https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master'), 'https://travis-ci.org/tersesystems/jmxbuilder')
 	].join('\n')
 -->
-[![Bintray](https://img.shields.io/badge/bintray-tersesystems%3Ajmxbuilder-blue.svg)](https://bintray.com/tersesystems/maven/jmxbuilder/view)
-[![Latest version](https://img.shields.io/badge/latest-0.0.4-blue.svg)](https://github.com/tersesystems/jmxbuilder/releases/latest)
+[![Maven central](https://img.shields.io/badge/mavencentral-com.tersesystems.jmxbuilder%3Ajmxbuilder-blue.svg)](https://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.tersesystems.jmxbuilder%22%20AND%20a%3A%22jmxbuilder%22)
 [![License Apache2](https://img.shields.io/badge/license-Apache2-blue.svg)](https://www.tldrlegal.com/l/apache2)
 
 [![Travis CI](https://travis-ci.org/tersesystems/jmxbuilder.svg?branch=master)](https://travis-ci.org/tersesystems/jmxbuilder)
