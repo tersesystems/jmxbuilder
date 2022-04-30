@@ -57,7 +57,7 @@ class UserExample {
 
 This will provide something that looks like this:
 
-![screenshot.png](screenshot.png)
+![screenshot.png](docs/screenshot.png)
 
 
 > **NOTE**: JMXBuilder will attempt to infer the type when setting operations if it is not provided, but JMX has issues with primitive types.  Specify the type explicitly and use the `TYPE` field to be safe.
@@ -122,7 +122,7 @@ public class CompositeExample {
 }
 ```
 
-![composite.png](composite.png)
+![composite.png](docs/composite.png)
 
 ## Tables
 
@@ -160,7 +160,7 @@ public class TabularExample {
 
 Which looks like this:
 
-![tabular.png](tabular.png)
+![tabular.png](docs/tabular.png)
 
 ## Operations
 
