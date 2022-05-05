@@ -42,10 +42,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -629,12 +625,8 @@ public abstract class MappedMXBeanType {
 
             // check if a static from method exists
             try {
-                fromMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
-                        public Method run() throws NoSuchMethodException {
-                            return javaClass.getMethod("from", COMPOSITE_DATA_CLASS);
-                        }
-                    });
-            } catch (PrivilegedActionException e) {
+                fromMethod = javaClass.getMethod("from", COMPOSITE_DATA_CLASS);
+            } catch (NoSuchMethodException e) {
                 // ignore NoSuchMethodException since we allow classes
                 // that has no from method to be embeded in another class.
             }
@@ -649,12 +641,7 @@ public abstract class MappedMXBeanType {
                 this.isCompositeData = false;
 
                 // Make a CompositeData containing all the getters
-                final Method[] methods =
-                    AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-                            public Method[] run() {
-                                return javaClass.getMethods();
-                            }
-                        });
+                final Method[] methods = javaClass.getMethods();
                 final List<String> names = new ArrayList<>();
                 final List<OpenType<?>> types = new ArrayList<>();
 
