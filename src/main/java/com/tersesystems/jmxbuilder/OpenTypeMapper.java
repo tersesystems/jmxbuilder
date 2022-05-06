@@ -17,9 +17,7 @@
  */
 package com.tersesystems.jmxbuilder;
 
-import com.sun.jmx.mbeanserver.DefaultMXBeanMappingFactory;
-import com.sun.jmx.mbeanserver.MXBeanMapping;
-import com.sun.jmx.mbeanserver.MXBeanMappingFactory;
+import com.tersesystems.jmxbuilder.patched.MappedMXBeanType;
 import net.jodah.typetools.TypeResolver;
 
 import javax.management.ObjectName;
@@ -36,15 +34,6 @@ import java.util.Date;
  * Maps between a type and an OpenType.
  */
 public class OpenTypeMapper {
-    private final MXBeanMappingFactory mappingFactory;
-
-    private OpenTypeMapper(MXBeanMappingFactory mappingFactory) {
-        this.mappingFactory = mappingFactory;
-    }
-
-    private OpenTypeMapper() {
-        this(DefaultMXBeanMappingFactory.DEFAULT);
-    }
 
     public static OpenTypeMapper getInstance() {
         return SingletonHolder.INSTANCE;
@@ -58,8 +47,7 @@ public class OpenTypeMapper {
     @SuppressWarnings("unchecked")
     public <T> OpenType<T> fromType(Type type) {
         try {
-            final MXBeanMapping mapping = mappingFactory.mappingForType(type, mappingFactory);
-            return (OpenType<T>) mapping.getOpenType();
+            return (OpenType<T>) MappedMXBeanType.toOpenType(type);
         } catch (OpenDataException e) {
             throw new IllegalStateException(e);
         }
