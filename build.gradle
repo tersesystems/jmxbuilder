@@ -1,44 +1,27 @@
 buildscript {
     repositories {
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        mavenLocal() //for local testing of shipkit
+        maven { url "https://plugins.gradle.org/m2/" }
     }
     dependencies {
         classpath "org.shipkit:shipkit-auto-version:1.+"
         classpath "org.shipkit:shipkit-changelog:1.+"
+        classpath "io.github.gradle-nexus:publish-plugin:1.0.0"
     }
 }
 
 plugins {
-    id 'java-library'
-    id 'com.diffplug.gradle.spotless'  version '3.24.3'
-    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+    id("java")
+    //id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
-
-apply plugin: 'org.shipkit.shipkit-auto-version'
-apply plugin: 'maven'
-apply from: "gradle/release.gradle"
 
 repositories {
     mavenCentral()
 }
 
-test {
-    useJUnitPlatform()
-}
-
-spotless {
-    freshmark {
-        target 'README.md' 
-        propertiesFile('gradle.properties')
-        propertiesFile('version.properties')
-    }
-}
-
 dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    //api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
 
     // https://mvnrepository.com/artifact/net.jodah/typetools
     implementation group: 'net.jodah', name: 'typetools', version: '0.6.1'
@@ -50,24 +33,11 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.3.1'
     testImplementation ("org.assertj:assertj-core:3.11.1")
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+
+    
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-install {
-    repositories {
-        mavenInstaller {
-            pom {
-                version = '0.0.1-SNAPSHOT'
-                groupId = 'com.github.tersesystem'
-                artifactId = 'jmxbuilder'
-                project {
-                    description = 'auto-generated POM - do not edit'
-                }
-            }.writeTo("${project.projectDir}/pom.xml")
-        }
-    }
+    setSourceCompatibility(JavaVersion.VERSION_1_8)
+    setTargetCompatibility(JavaVersion.VERSION_1_8)
 }
