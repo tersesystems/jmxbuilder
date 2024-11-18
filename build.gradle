@@ -1,26 +1,27 @@
+buildscript {
+    repositories {
+        mavenLocal() //for local testing of shipkit
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath "org.shipkit:shipkit-auto-version:1.+"
+        classpath "org.shipkit:shipkit-changelog:1.+"
+        classpath "io.github.gradle-nexus:publish-plugin:1.0.0"
+    }
+}
+
 plugins {
-    id 'java-library'
-    id "org.shipkit.java"              version "2.2.5"
-    id 'com.diffplug.gradle.spotless'  version '3.24.3'
+  id("java")
+  //id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
 
 repositories {
-    jcenter()
-}
-
-test {
-    useJUnitPlatform()
-}
-
-spotless {
-    freshmark {
-        propertiesFile('version.properties')
-    }
+    mavenCentral()
 }
 
 dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
 
     // https://mvnrepository.com/artifact/net.jodah/typetools
     implementation group: 'net.jodah', name: 'typetools', version: '0.6.1'
