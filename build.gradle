@@ -17,6 +17,7 @@ plugins {
 }
 
 apply plugin: 'org.shipkit.shipkit-auto-version'
+apply plugin: 'maven'
 apply from: "gradle/release.gradle"
 
 repositories {
@@ -54,4 +55,19 @@ dependencies {
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+install {
+    repositories {
+        mavenInstaller {
+            pom {
+                version = '0.0.1-SNAPSHOT'
+                groupId = 'com.github.tersesystem'
+                artifactId = 'jmxbuilder'
+                project {
+                    description = 'auto-generated POM - do not edit'
+                }
+            }.writeTo("${project.projectDir}/pom.xml")
+        }
+    }
 }
