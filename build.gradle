@@ -11,7 +11,7 @@ buildscript {
 }
 
 plugins {
-  id("java")
+  id("java-library")
   //id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
 
@@ -19,9 +19,13 @@ repositories {
     mavenCentral()
 }
 
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
 dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
+    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
 
     // https://mvnrepository.com/artifact/net.jodah/typetools
     implementation group: 'net.jodah', name: 'typetools', version: '0.6.1'
@@ -29,10 +33,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j
     testImplementation group: 'org.slf4j', name: 'jul-to-slf4j', version: '1.7.29'
     testImplementation 'ch.qos.logback:logback-classic:1.2.3'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.3.1'
+
     testImplementation ("org.assertj:assertj-core:3.11.1")
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 java {
