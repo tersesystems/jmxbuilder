@@ -93,7 +93,9 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
     }
 }
 
+ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
+
 signing { // https://docs.gradle.org/current/userguide/signing_plugin.html
-    useGpgCmd()
+    required { isReleaseVersion }
     sign publishing.publications.mavenJava
 }
