@@ -1,7 +1,6 @@
 ///usr/bin/env jbang "$0" "$@" ; exit $?
 
-//DEPS com.tersesystems.jmxbuilder:jmxbuilder:0.0.5
-//DEPS net.jodah:typetools:0.6.3
+//DEPS com.tersesystems.jmxbuilder:jmxbuilder:1.0.0-SNAPSHOT
 //RUNTIME_OPTIONS --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED --add-exports=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
 
 package example;
