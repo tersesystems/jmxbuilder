@@ -20,7 +20,6 @@ package com.tersesystems.jmxbuilder;
 import com.tersesystems.jmxbuilder.model.ExampleService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 import javax.management.*;
 import javax.management.modelmbean.DescriptorSupport;
