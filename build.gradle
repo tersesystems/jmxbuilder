@@ -35,13 +35,10 @@ test {
 
 // https://github.com/gradle-nexus/publish-plugin/?tab=readme-ov-file#publishing-to-maven-central-via-sonatype-ossrh
 nexusPublishing {
-    repositories {
-        if (System.getenv("SONATYPE_PWD")) {
-            sonatype {
-                username = System.getenv("SONATYPE_USER")
-                password = System.getenv("SONATYPE_PWD")
-            }
-        }
+    repositories {        
+        // the user token is set outside the project
+        // https://central.sonatype.org/publish/generate-token/
+        sonatype()
     }
 }
 
@@ -70,17 +67,26 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
             artifact javadocJar
 
             pom {
-                name = tasks.jar.archiveBaseName
-                description = "JMXBuilder"
-                url = "https://github.com/tersesystems/jmxbuilder"
+                name.set("JMXBuilder")
+                description.set("JMXBuilder")
+                url.set("https://github.com/tersesystems/jmxbuilder")
                 licenses {
                     license {
-                        name = 'Apache2'
-                        url = 'https://github.com/tersesystems/jmxbuilder/blob/main/LICENSE'
+                        name.set("Apache2")
+                        url.set("https://github.com/tersesystems/jmxbuilder/blob/main/LICENSE")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("wsargent")
+                        name.set("Will Sargent")
+                        email.set("will@tersesystems.com")
                     }
                 }
                 scm {
-                    url = 'https://github.com/tersesystems/jmxbuilder.git'
+                    connection.set("scm:git:https://github.com/tersesystems/jmxbuilder.git")
+                    developerConnection.set("scm:git:https://github.com/tersesystems/jmxbuilder.git")
+                    url.set("https://github.com/tersesystems/jmxbuilder.git")
                 }
             }
         }
@@ -88,8 +94,6 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
 }
 
 signing { // https://docs.gradle.org/current/userguide/signing_plugin.html
-    if (System.getenv("PGP_KEY")) {
-        useInMemoryPgpKeys(System.getenv("PGP_KEY"), System.getenv("PGP_PWD"))
-        sign publishing.publications.mavenJava
-    }
+    useGpgCmd()
+    sign publishing.publications.mavenJava
 }
