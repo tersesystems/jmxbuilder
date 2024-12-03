@@ -63,8 +63,8 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
     publications {
         mavenJava(MavenPublication) { //name of the publication
             from components.java
-            artifact sourcesJar
-            artifact javadocJar
+            artifact.set(sourcesJar)
+            artifact.set(javadocJar)
 
             pom {
                 name.set("JMXBuilder")
