@@ -1,14 +1,36 @@
 plugins {
     id("java-library")
-    //id 'maven-publish' // https://docs.gradle.org/current/userguide/publishing_maven.html
+    id 'maven-publish' // https://docs.gradle.org/current/userguide/publishing_maven.html
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
-    id("maven-publish")
     id("signing")
     //id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
 
 repositories {
     mavenCentral()
+}
+
+dependencies {
+    // https://mvnrepository.com/artifact/net.jodah/typetools
+    implementation group: 'net.jodah', name: 'typetools', version: '0.6.3'
+
+    testImplementation("org.assertj:assertj-core:3.11.1")
+
+    testImplementation(platform('org.junit:junit-bom:5.11.3'))
+    testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
+}
+
+java {
+    setSourceCompatibility(JavaVersion.VERSION_1_8)
+    setTargetCompatibility(JavaVersion.VERSION_1_8)
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }
 
 // https://github.com/gradle-nexus/publish-plugin/?tab=readme-ov-file#publishing-to-maven-central-via-sonatype-ossrh
@@ -54,7 +76,7 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
                 licenses {
                     license {
                         name = 'Apache2'
-                        url = 'https://github.com/tersesystems/jmxbuilder/blob/master/LICENSE'
+                        url = 'https://github.com/tersesystems/jmxbuilder/blob/main/LICENSE'
                     }
                 }
                 scm {
@@ -63,39 +85,11 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
             }
         }
     }
-
-    repositories {
-        // useful for testing - running "publish" will create artifacts/pom in a local dir
-        maven { url = "$rootDir/build/repo" }
-    }
 }
 
 signing { // https://docs.gradle.org/current/userguide/signing_plugin.html
     if (System.getenv("PGP_KEY")) {
         useInMemoryPgpKeys(System.getenv("PGP_KEY"), System.getenv("PGP_PWD"))
-        sign publishing.publications.maven
-    }
-}
-
-dependencies {
-    // https://mvnrepository.com/artifact/net.jodah/typetools
-    implementation group: 'net.jodah', name: 'typetools', version: '0.6.3'
-
-    testImplementation ("org.assertj:assertj-core:3.11.1")
-
-    testImplementation(platform('org.junit:junit-bom:5.11.3'))
-    testImplementation('org.junit.jupiter:junit-jupiter')
-    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
-}
-
-java {
-    setSourceCompatibility(JavaVersion.VERSION_1_8)
-    setTargetCompatibility(JavaVersion.VERSION_1_8)
-}
-
-test {
-    useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
+        sign publishing.publications.mavenJava
     }
 }
