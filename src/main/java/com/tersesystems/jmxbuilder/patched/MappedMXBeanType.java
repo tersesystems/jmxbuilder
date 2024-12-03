@@ -65,7 +65,7 @@ import static javax.management.openmbean.SimpleType.STRING;
 import static javax.management.openmbean.SimpleType.VOID;
 
 /**
- * {@link sun.management.MappedMXBeanType}
+ * See sun.management.MappedMXBeanType if it exists.
  */
 // Suppress unchecked cast warnings at line 442, 523 and 546
 // Suppress unchecked calls at line 235, 284, 380 and 430.
