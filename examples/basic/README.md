@@ -2,22 +2,10 @@
 
 This is a basic example of an application using jmxbuilder.
 
-## Compiling
-
-Make sure you have the jmxbuilder library installed, easiest is to create it with
-
-`gradle clean build publishToMavenLocal`
-
-from the root directory.
-
 ## Running
 
-Run this example with
-
-```
-gradle --continuous run
-```
+To run, install [JBang](https://www.jbang.dev/documentation/guide/latest/index.html) and then `jbang App.java` will start a running JVM instance.
 
 ## Connecting
 
-Connect to this example with [Zulu Mission Control](https://www.azul.com/products/zulu-mission-control/) or another JMX tool like VisualVM.
+Connect to this example with [JDK Mission Control](https://adoptium.net/jmc/) -- remember to use the `| tar xv -` option when uncompressing it on MacOS! -- and connect to the JVM.  Go to the MBean Browser tab, and you'll see the beans under `com.tersesystems` in the MBean Tree.

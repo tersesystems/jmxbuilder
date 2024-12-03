@@ -1,22 +1,80 @@
-buildscript {
-    repositories {
-        mavenLocal() //for local testing of shipkit
-        maven { url "https://plugins.gradle.org/m2/" }
-    }
-    dependencies {
-        classpath "org.shipkit:shipkit-auto-version:1.+"
-        classpath "org.shipkit:shipkit-changelog:1.+"
-        classpath "io.github.gradle-nexus:publish-plugin:1.0.0"
-    }
-}
-
 plugins {
     id("java-library")
+    //id 'maven-publish' // https://docs.gradle.org/current/userguide/publishing_maven.html
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    id("maven-publish")
+    id("signing")
     //id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
 
 repositories {
     mavenCentral()
+}
+
+// https://github.com/gradle-nexus/publish-plugin/?tab=readme-ov-file#publishing-to-maven-central-via-sonatype-ossrh
+nexusPublishing {
+    repositories {
+        if (System.getenv("SONATYPE_PWD")) {
+            sonatype {
+                username = System.getenv("SONATYPE_USER")
+                password = System.getenv("SONATYPE_PWD")
+            }
+        }
+    }
+}
+
+//Auxiliary jar files required by Maven module publications
+tasks.register('sourcesJar', Jar) {
+    dependsOn classes
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+//TODO: java.withSourcesJar(), java.withJavadocJar()
+tasks.register('javadocJar', Jar) {
+    dependsOn javadoc
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+// https://stackoverflow.com/a/52208921
+javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+
+publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
+    publications {
+        mavenJava(MavenPublication) { //name of the publication
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom {
+                name = tasks.jar.archiveBaseName
+                description = "JMXBuilder"
+                url = "https://github.com/tersesystems/jmxbuilder"
+                licenses {
+                    license {
+                        name = 'Apache2'
+                        url = 'https://github.com/tersesystems/jmxbuilder/blob/master/LICENSE'
+                    }
+                }
+                scm {
+                    url = 'https://github.com/tersesystems/jmxbuilder.git'
+                }
+            }
+        }
+    }
+
+    repositories {
+        // useful for testing - running "publish" will create artifacts/pom in a local dir
+        maven { url = "$rootDir/build/repo" }
+    }
+}
+
+signing { // https://docs.gradle.org/current/userguide/signing_plugin.html
+    if (System.getenv("PGP_KEY")) {
+        useInMemoryPgpKeys(System.getenv("PGP_KEY"), System.getenv("PGP_PWD"))
+        sign publishing.publications.maven
+    }
 }
 
 dependencies {

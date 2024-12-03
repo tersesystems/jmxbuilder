@@ -1,20 +1,9 @@
-/*
- * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright 2019 Terse Systems <will@tersesystems.com>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+///usr/bin/env jbang "$0" "$@" ; exit $?
+
+//DEPS com.tersesystems.jmxbuilder:jmxbuilder:0.0.5
+//DEPS net.jodah:typetools:0.6.3
+//RUNTIME_OPTIONS --add-opens=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED --add-exports=java.management/com.sun.jmx.mbeanserver=ALL-UNNAMED
+
 package example;
 
 import javax.management.*;
@@ -22,6 +11,8 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 import java.lang.management.ManagementFactory;
 import java.util.*;
+
+import static java.lang.String.format;
 
 import com.tersesystems.jmxbuilder.*;
 
@@ -164,3 +155,101 @@ public class App {
 
 }
 
+class Address {
+    private final String street1;
+    private final String city;
+    private final String state;
+
+    public Address(String street1, String city, String state) {
+        this.street1 = street1;
+        this.city = city;
+        this.state = state;
+    }
+
+    public String getStreet1() {
+        return street1;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    @Override
+    public String toString() {
+        return format("Address(%s, %s, %s)", street1, city, state);
+    }
+}
+
+class ExampleService {
+    private boolean debug;
+
+    public String dump() {
+        return ("Dumping contents");
+    }
+
+    public boolean isDebugEnabled() {
+        return debug;
+    }
+
+    public void setDebugEnabled(boolean debug) {
+        this.debug = debug;
+    }
+}
+
+
+class User {
+    private String name;
+    private Integer age;
+    private final Address address;
+
+    public User(String name, int age, Address address) {
+        this.name = name;
+        this.age = age;
+        this.address = address;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public void ping() {
+        System.out.println("ping!");
+    }
+
+    @Override
+    public String toString() {
+        return format("User(%s, %n, %s)", name, age, address);
+    }
+
+    public String pong(String pong) {
+        return pong;
+    }
+
+    public String concatenate(String s1, String s2) {
+        return s1 + s2;
+    }
+
+    public String callMethod(String s1, String s2, String s3, String s4) {
+        return "method called";
+    }
+}
