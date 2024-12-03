@@ -93,9 +93,9 @@ publishing { //https://docs.gradle.org/current/userguide/publishing_maven.html
     }
 }
 
-ext.isReleaseVersion = !version.endsWith("SNAPSHOT")
+ext.isReleaseVersion = ! project.version.endsWith("SNAPSHOT")
 
 signing { // https://docs.gradle.org/current/userguide/signing_plugin.html
-    required { isReleaseVersion }
+    required { isReleaseVersion && gradle.taskGraph.hasTask("publishToSonatype") }
     sign publishing.publications.mavenJava
 }
